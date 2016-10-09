@@ -32,7 +32,6 @@
   @retval EFI_NOT_FOUND
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceOpenNotFound(
   IN EFI_FILE_PROTOCOL *This,
   OUT EFI_FILE_PROTOCOL **NewHandle,
@@ -52,7 +51,6 @@ FileInterfaceOpenNotFound(
   @retval EFI_SUCCESS
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceNopGeneric(
   IN EFI_FILE_PROTOCOL *This
   )
@@ -69,7 +67,6 @@ FileInterfaceNopGeneric(
   @retval EFI_UNSUPPORTED
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceNopGetPosition(
   IN EFI_FILE_PROTOCOL *This,
   OUT UINT64 *Position
@@ -87,7 +84,6 @@ FileInterfaceNopGetPosition(
   @retval EFI_UNSUPPORTED
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceNopSetPosition(
   IN EFI_FILE_PROTOCOL *This,
   IN UINT64 Position
@@ -107,7 +103,6 @@ FileInterfaceNopSetPosition(
   @retval EFI_UNSUPPORTED
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceNopGetInfo(
   IN EFI_FILE_PROTOCOL *This,
   IN EFI_GUID *InformationType,
@@ -129,7 +124,6 @@ FileInterfaceNopGetInfo(
   @retval EFI_UNSUPPORTED
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceNopSetInfo(
   IN EFI_FILE_PROTOCOL *This,
   IN EFI_GUID *InformationType,
@@ -153,7 +147,6 @@ FileInterfaceNopSetInfo(
   @return A return value from gST->ConOut->OutputString.
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceStdOutWrite(
   IN EFI_FILE_PROTOCOL *This,
   IN OUT UINTN *BufferSize,
@@ -179,7 +172,6 @@ FileInterfaceStdOutWrite(
   @retval EFI_UNSUPPORTED
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceStdInWrite(
   IN      EFI_FILE_PROTOCOL *This,
   IN OUT  UINTN             *BufferSize,
@@ -201,7 +193,6 @@ FileInterfaceStdInWrite(
   @return A return value from gST->StdErr->OutputString.
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceStdErrWrite(
   IN EFI_FILE_PROTOCOL *This,
   IN OUT UINTN *BufferSize,
@@ -221,7 +212,6 @@ FileInterfaceStdErrWrite(
   @retval EFI_UNSUPPORTED
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceStdOutRead(
   IN EFI_FILE_PROTOCOL *This,
   IN OUT UINTN *BufferSize,
@@ -241,7 +231,6 @@ FileInterfaceStdOutRead(
   @retval EFI_UNSUPPORTED Always.
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceStdErrRead(
   IN EFI_FILE_PROTOCOL *This,
   IN OUT UINTN *BufferSize,
@@ -261,7 +250,6 @@ FileInterfaceStdErrRead(
   @retval EFI_SUCCESS Always.
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceNulRead(
   IN      EFI_FILE_PROTOCOL *This,
   IN OUT  UINTN             *BufferSize,
@@ -282,7 +270,6 @@ FileInterfaceNulRead(
   @retval EFI_SUCCESS
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceNulWrite(
   IN EFI_FILE_PROTOCOL *This,
   IN OUT UINTN *BufferSize,
@@ -302,7 +289,6 @@ FileInterfaceNulWrite(
   @param[out] TabUpdatePos      Return the TAB update position.
 **/
 EFI_STATUS
-EFIAPI
 CreateTabCompletionList (
   IN CONST CHAR16             *InputString,
   IN CONST UINTN              StringLen, 
@@ -456,7 +442,6 @@ CreateTabCompletionList (
   @retval EFI_OUT_OF_RESOURCES  A memory allocation failed.
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceStdInRead(
   IN EFI_FILE_PROTOCOL *This,
   IN OUT UINTN *BufferSize,
@@ -1032,7 +1017,6 @@ typedef struct {
   @retval EFI_SUCCESS
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceEnvClose(
   IN EFI_FILE_PROTOCOL *This
   )
@@ -1095,7 +1079,6 @@ FileInterfaceEnvClose(
   @retval The return value from FileInterfaceEnvClose().
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceEnvDelete(
   IN EFI_FILE_PROTOCOL *This
   )
@@ -1114,7 +1097,6 @@ FileInterfaceEnvDelete(
   @retval EFI_SUCCESS   The data was read.
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceEnvRead(
   IN EFI_FILE_PROTOCOL *This,
   IN OUT UINTN *BufferSize,
@@ -1137,7 +1119,6 @@ FileInterfaceEnvRead(
   @retval EFI_SUCCESS   The data was read.
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceEnvVolWrite(
   IN EFI_FILE_PROTOCOL *This,
   IN OUT UINTN *BufferSize,
@@ -1184,7 +1165,6 @@ FileInterfaceEnvVolWrite(
   @retval EFI_SUCCESS   The data was read.
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceEnvNonVolWrite(
   IN EFI_FILE_PROTOCOL *This,
   IN OUT UINTN *BufferSize,
@@ -1227,7 +1207,6 @@ FileInterfaceEnvNonVolWrite(
   @return other     a pointer to an EFI_FILE_PROTOCOL structure
 **/
 EFI_FILE_PROTOCOL*
-EFIAPI
 CreateFileInterfaceEnv(
   IN CONST CHAR16 *EnvName
   )
@@ -1290,7 +1269,6 @@ CreateFileInterfaceEnv(
   @param[in, out] Row         Current row of the cursor position
 **/
 VOID
-EFIAPI
 MoveCursorBackward (
   IN     UINTN                   LineLength,
   IN OUT UINTN                   *Column,
@@ -1320,7 +1298,6 @@ MoveCursorBackward (
   @param[in, out] Row         Current row of the cursor position
 **/
 VOID
-EFIAPI
 MoveCursorForward (
   IN     UINTN                   LineLength,
   IN     UINTN                   TotalRow,
@@ -1352,7 +1329,6 @@ MoveCursorForward (
   @param[in] StartColumn  which column to start at
 **/
 VOID
-EFIAPI
 PrintCommandHistory (
   IN CONST UINTN TotalCols,
   IN CONST UINTN TotalRows,
@@ -1430,7 +1406,6 @@ typedef struct {
   @retval EFI_INVALID_PARAMETER   The Position was invalid.
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceMemSetPosition(
   IN EFI_FILE_PROTOCOL *This,
   OUT UINT64 Position
@@ -1453,7 +1428,6 @@ FileInterfaceMemSetPosition(
   @retval EFI_SUCCESS   The position was retrieved.
 **/ 
 EFI_STATUS
-EFIAPI
 FileInterfaceMemGetPosition(
   IN EFI_FILE_PROTOCOL *This,
   OUT UINT64 *Position
@@ -1474,7 +1448,6 @@ FileInterfaceMemGetPosition(
   @retval EFI_SUCCESS          The data was written.
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceMemWrite(
   IN EFI_FILE_PROTOCOL *This,
   IN OUT UINTN *BufferSize,
@@ -1528,7 +1501,6 @@ FileInterfaceMemWrite(
   @retval EFI_SUCCESS   The data was read.
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceMemRead(
   IN EFI_FILE_PROTOCOL *This,
   IN OUT UINTN *BufferSize,
@@ -1556,7 +1528,6 @@ FileInterfaceMemRead(
   @retval EFI_SUCCESS   The 'file' was closed.
 **/ 
 EFI_STATUS
-EFIAPI
 FileInterfaceMemClose(
   IN EFI_FILE_PROTOCOL *This
   )
@@ -1576,7 +1547,6 @@ FileInterfaceMemClose(
   @return other     A pointer to an EFI_FILE_PROTOCOL structure.
 **/
 EFI_FILE_PROTOCOL*
-EFIAPI
 CreateFileInterfaceMem(
   IN CONST BOOLEAN Unicode
   )
@@ -1652,7 +1622,6 @@ typedef struct {
 
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceFileSetPosition(
   IN EFI_FILE_PROTOCOL        *This,
   IN UINT64                   Position
@@ -1672,7 +1641,6 @@ FileInterfaceFileSetPosition(
 
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceFileGetPosition(
   IN EFI_FILE_PROTOCOL        *This,
   OUT UINT64                  *Position
@@ -1700,7 +1668,6 @@ FileInterfaceFileGetPosition(
 
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceFileGetInfo(
   IN EFI_FILE_PROTOCOL        *This,
   IN EFI_GUID                 *InformationType,
@@ -1729,7 +1696,6 @@ FileInterfaceFileGetInfo(
 
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceFileSetInfo(
   IN EFI_FILE_PROTOCOL        *This,
   IN EFI_GUID                 *InformationType,
@@ -1756,7 +1722,6 @@ FileInterfaceFileSetInfo(
 
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceFileFlush(
   IN EFI_FILE_PROTOCOL  *This
   )
@@ -1779,7 +1744,6 @@ FileInterfaceFileFlush(
 
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceFileRead(
   IN EFI_FILE_PROTOCOL        *This,
   IN OUT UINTN                *BufferSize,
@@ -1845,7 +1809,6 @@ FileInterfaceFileRead(
   @retval EFI_VOLUME_FULL      The volume is full.
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceFileOpen (
   IN EFI_FILE_PROTOCOL        *This,
   OUT EFI_FILE_PROTOCOL       **NewHandle,
@@ -1867,7 +1830,6 @@ FileInterfaceFileOpen (
 
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceFileDelete(
   IN EFI_FILE_PROTOCOL  *This
   )
@@ -1886,7 +1848,6 @@ FileInterfaceFileDelete(
   @retval EFI_SUCCESS   The file was closed.
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceFileClose(
   IN EFI_FILE_PROTOCOL *This
   )
@@ -1910,7 +1871,6 @@ FileInterfaceFileClose(
   @retval EFI_SUCCESS   The data was written.
 **/
 EFI_STATUS
-EFIAPI
 FileInterfaceFileWrite(
   IN     EFI_FILE_PROTOCOL  *This,
   IN OUT UINTN              *BufferSize,

@@ -25,7 +25,6 @@ BOOLEAN AsciiRedirection = FALSE;
   @param[in] String        the string to parse
 **/
 CONST CHAR16*
-EFIAPI
 FindEndOfParameter(
   IN CONST CHAR16 *String
   )
@@ -85,7 +84,6 @@ FindEndOfParameter(
   @return   EFI_NOT_FOUND         A closing " could not be found on the specified string
 **/
 EFI_STATUS
-EFIAPI
 GetNextParameter(
   IN OUT CHAR16   **Walker,
   IN OUT CHAR16   **TempParameter,
@@ -195,7 +193,6 @@ DEBUG_CODE_END();
   @return EFI_OUT_OF_RESOURCES  a memory allocation failed.
 **/
 EFI_STATUS
-EFIAPI
 ParseCommandLineToArgs(
   IN CONST CHAR16 *CommandLine,
   IN BOOLEAN      StripQuotation,
@@ -295,7 +292,6 @@ Done:
   @sa ParseCommandLineToArgs
 **/
 EFI_STATUS
-EFIAPI
 CreatePopulateInstallShellParametersProtocol (
   IN OUT EFI_SHELL_PARAMETERS_PROTOCOL  **NewShellParameters,
   IN OUT BOOLEAN                        *RootShellInstance
@@ -437,7 +433,6 @@ CreatePopulateInstallShellParametersProtocol (
   @sa UninstallProtocolInterface
 **/
 EFI_STATUS
-EFIAPI
 CleanUpShellParametersProtocol (
   IN OUT EFI_SHELL_PARAMETERS_PROTOCOL  *NewShellParameters
   )
@@ -484,7 +479,6 @@ CleanUpShellParametersProtocol (
   @return An error upon failure.
 **/
 EFI_STATUS
-EFIAPI
 IsUnicodeFile(
   IN CONST CHAR16 *FileName
   )
@@ -519,7 +513,6 @@ IsUnicodeFile(
   @param[in, out] TheString  A pointer to the string to update.
 **/
 VOID
-EFIAPI
 StripQuotes (
   IN OUT CHAR16 *TheString
   )
@@ -571,7 +564,6 @@ CalculateEfiHdrCrc (
   @return       The modified FileName.
 **/
 CHAR16*
-EFIAPI
 FixFileName (
   IN CHAR16 *FileName
   )
@@ -614,7 +606,6 @@ FixFileName (
   @return       The modified FileName.
 **/
 CHAR16*
-EFIAPI
 FixVarName (
   IN CHAR16 *FileName
   )
@@ -643,7 +634,6 @@ FixVarName (
   @retval EFI_SUCCESS   The unicode file tag has been moved successfully.
 **/
 EFI_STATUS
-EFIAPI
 RemoveFileTag(
   IN SHELL_FILE_HANDLE *Handle
   )
@@ -707,7 +697,6 @@ WriteFileTag (
   @retval   EFI_OUT_OF_RESOURCES        A memory allocation failed.
 **/
 EFI_STATUS
-EFIAPI
 UpdateStdInStdOutStdErr(
   IN OUT EFI_SHELL_PARAMETERS_PROTOCOL  *ShellParameters,
   IN CHAR16                             *NewCommandLine,
@@ -1307,7 +1296,6 @@ UpdateStdInStdOutStdErr(
   @param[in] SystemTableInfo           Pointer to old system table information.
 **/
 EFI_STATUS
-EFIAPI
 RestoreStdInStdOutStdErr (
   IN OUT EFI_SHELL_PARAMETERS_PROTOCOL  *ShellParameters,
   IN  SHELL_FILE_HANDLE                 *OldStdIn,
@@ -1384,7 +1372,6 @@ RestoreStdInStdOutStdErr (
   @retval   EFI_OUT_OF_RESOURCES        A memory allocation failed.
 **/
 EFI_STATUS
-EFIAPI
 UpdateArgcArgv(
   IN OUT EFI_SHELL_PARAMETERS_PROTOCOL  *ShellParameters,
   IN CONST CHAR16                       *NewCommandLine,
@@ -1426,7 +1413,6 @@ UpdateArgcArgv(
   @param[in] OldArgc                    pointer to old number of items in Argv list
 **/
 VOID
-EFIAPI
 RestoreArgcArgv(
   IN OUT EFI_SHELL_PARAMETERS_PROTOCOL  *ShellParameters,
   IN CHAR16                             ***OldArgv,

@@ -40,7 +40,6 @@ typedef struct {
 
 **/
 VOID
-EFIAPI
 ConInWaitForKey (
   IN  EFI_EVENT       Event,
   IN  VOID            *Context
@@ -58,7 +57,6 @@ ConInWaitForKey (
   @retval   EFI_SUCCESS The reset was successful.
 **/
 EFI_STATUS
-EFIAPI
 FileBasedSimpleTextInReset(
   IN EFI_SIMPLE_TEXT_INPUT_PROTOCOL *This,
   IN BOOLEAN                        ExtendedVerification
@@ -76,7 +74,6 @@ FileBasedSimpleTextInReset(
   @retval   EFI_SUCCESS The read was successful.
 **/
 EFI_STATUS
-EFIAPI
 FileBasedSimpleTextInReadKeyStroke(
   IN      EFI_SIMPLE_TEXT_INPUT_PROTOCOL *This,
   IN OUT  EFI_INPUT_KEY                  *Key
@@ -133,7 +130,6 @@ FileBasedSimpleTextInReadKeyStroke(
   @return                     A pointer to the allocated protocol structure;
 **/
 EFI_SIMPLE_TEXT_INPUT_PROTOCOL*
-EFIAPI
 CreateSimpleTextInOnFile(
   IN SHELL_FILE_HANDLE  FileHandleToUse,
   IN EFI_HANDLE         *HandleLocation
@@ -200,7 +196,6 @@ CreateSimpleTextInOnFile(
   @retval EFI_SUCCESS         The object was closed.
 **/
 EFI_STATUS
-EFIAPI
 CloseSimpleTextInOnFile(
   IN EFI_SIMPLE_TEXT_INPUT_PROTOCOL  *SimpleTextIn
   )
@@ -236,7 +231,6 @@ CloseSimpleTextInOnFile(
   @retval EFI_SUCCESS         The text output device was reset.
 **/
 EFI_STATUS
-EFIAPI
 FileBasedSimpleTextOutReset (
   IN  EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *This,
   IN  BOOLEAN                         ExtendedVerification
@@ -255,7 +249,6 @@ FileBasedSimpleTextOutReset (
   @retval EFI_SUCCESS The device(s) are capable of rendering the output string.
 **/
 EFI_STATUS
-EFIAPI
 FileBasedSimpleTextOutTestString (
   IN  EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *This,
   IN  CHAR16                          *WString
@@ -276,7 +269,6 @@ FileBasedSimpleTextOutTestString (
   @retval EFI_UNSUPPORTED       The mode number was not valid.
 **/
 EFI_STATUS
-EFIAPI
 FileBasedSimpleTextOutQueryMode (
   IN  EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *This,
   IN  UINTN                           ModeNumber,
@@ -305,7 +297,6 @@ FileBasedSimpleTextOutQueryMode (
   @retval EFI_UNSUPPORTED       The mode number was not valid.
 **/
 EFI_STATUS
-EFIAPI
 FileBasedSimpleTextOutSetMode (
   IN  EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL  *This,
   IN  UINTN                         ModeNumber
@@ -326,7 +317,6 @@ FileBasedSimpleTextOutSetMode (
   @retval EFI_SUCCESS           The attribute was set.
 **/
 EFI_STATUS
-EFIAPI
 FileBasedSimpleTextOutSetAttribute (
   IN  EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *This,
   IN  UINTN                           Attribute
@@ -344,7 +334,6 @@ FileBasedSimpleTextOutSetAttribute (
   @retval EFI_UNSUPPORTED       The output device is not in a valid text mode.
 **/
 EFI_STATUS
-EFIAPI
 FileBasedSimpleTextOutClearScreen (
   IN  EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL  *This
   )
@@ -362,7 +351,6 @@ FileBasedSimpleTextOutClearScreen (
   @retval EFI_SUCCESS           The operation completed successfully.
 **/
 EFI_STATUS
-EFIAPI
 FileBasedSimpleTextOutSetCursorPosition (
   IN  EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL  *This,
   IN  UINTN                         Column,
@@ -382,7 +370,6 @@ FileBasedSimpleTextOutSetCursorPosition (
   @retval EFI_SUCCESS           The operation completed successfully.
 **/
 EFI_STATUS
-EFIAPI
 FileBasedSimpleTextOutEnableCursor (
   IN  EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL  *This,
   IN  BOOLEAN                       Visible
@@ -408,7 +395,6 @@ FileBasedSimpleTextOutEnableCursor (
                                   rendered and were skipped.
 **/
 EFI_STATUS
-EFIAPI
 FileBasedSimpleTextOutOutputString (
   IN  EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *This,
   IN  CHAR16                          *WString
@@ -434,7 +420,6 @@ FileBasedSimpleTextOutOutputString (
   @return                     A pointer to the allocated protocol structure;
 **/
 EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL*
-EFIAPI
 CreateSimpleTextOutOnFile(
   IN SHELL_FILE_HANDLE               FileHandleToUse,
   IN EFI_HANDLE                      *HandleLocation,
@@ -499,7 +484,6 @@ CreateSimpleTextOutOnFile(
   @retval EFI_SUCCESS         The object was closed.
 **/
 EFI_STATUS
-EFIAPI
 CloseSimpleTextOutOnFile(
   IN EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL  *SimpleTextOut
   )

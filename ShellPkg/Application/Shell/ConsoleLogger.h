@@ -58,7 +58,6 @@ typedef struct _CONSOLE_LOGGER_PRIVATE_DATA{
   @sa InstallProtocolInterface
 **/
 EFI_STATUS
-EFIAPI
 ConsoleLoggerInstall(
   IN CONST UINTN ScreensToSave,
   OUT CONSOLE_LOGGER_PRIVATE_DATA **ConsoleInfo
@@ -74,7 +73,6 @@ ConsoleLoggerInstall(
   @return other           The operation failed.  This was from UninstallProtocolInterface.
 **/
 EFI_STATUS
-EFIAPI
 ConsoleLoggerUninstall(
   IN OUT CONSOLE_LOGGER_PRIVATE_DATA *ConsoleInfo
   );
@@ -92,7 +90,6 @@ ConsoleLoggerUninstall(
   @param[in] ConsoleInfo  The pointer to the instance of the console logger information.
 **/
 EFI_STATUS
-EFIAPI
 ConsoleLoggerDisplayHistory(
   IN CONST BOOLEAN  Forward,
   IN CONST UINTN    Rows,
@@ -109,7 +106,6 @@ ConsoleLoggerDisplayHistory(
   @sa UpdateDisplayFromHistory
 **/
 EFI_STATUS
-EFIAPI
 ConsoleLoggerStopHistory(
   IN CONSOLE_LOGGER_PRIVATE_DATA *ConsoleInfo
   );
@@ -122,7 +118,6 @@ ConsoleLoggerStopHistory(
   @return other           The operation failed.
 **/
 EFI_STATUS
-EFIAPI
 UpdateDisplayFromHistory(
   IN CONSOLE_LOGGER_PRIVATE_DATA *ConsoleInfo
   );
@@ -138,7 +133,6 @@ UpdateDisplayFromHistory(
                               could not be reset.
 **/
 EFI_STATUS
-EFIAPI
 ConsoleLoggerReset (
   IN  EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *This,
   IN  BOOLEAN                         ExtendedVerification
@@ -161,7 +155,6 @@ ConsoleLoggerReset (
                                   rendered and were skipped.
 **/
 EFI_STATUS
-EFIAPI
 ConsoleLoggerOutputString(
   IN  EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *This,
   IN  CHAR16                          *WString
@@ -182,7 +175,6 @@ ConsoleLoggerOutputString(
 
 **/
 EFI_STATUS
-EFIAPI
 ConsoleLoggerTestString (
   IN  EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *This,
   IN  CHAR16                          *WString
@@ -203,7 +195,6 @@ ConsoleLoggerTestString (
   @retval EFI_UNSUPPORTED       The mode number was not valid.
 **/
 EFI_STATUS
-EFIAPI
 ConsoleLoggerQueryMode (
   IN  EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL  *This,
   IN  UINTN                            ModeNumber,
@@ -224,7 +215,6 @@ ConsoleLoggerQueryMode (
   @retval EFI_UNSUPPORTED       The mode number was not valid.
 **/
 EFI_STATUS
-EFIAPI
 ConsoleLoggerSetMode (
   IN  EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL  *This,
   IN  UINTN                            ModeNumber
@@ -246,7 +236,6 @@ ConsoleLoggerSetMode (
 
 **/
 EFI_STATUS
-EFIAPI
 ConsoleLoggerSetAttribute (
   IN  EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *This,
   IN  UINTN                           Attribute
@@ -264,7 +253,6 @@ ConsoleLoggerSetAttribute (
   @retval EFI_UNSUPPORTED       The output device is not in a valid text mode.
 **/
 EFI_STATUS
-EFIAPI
 ConsoleLoggerClearScreen (
   IN  EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL  *This
   );
@@ -283,7 +271,6 @@ ConsoleLoggerClearScreen (
                                 cursor position is invalid for the current mode.
 **/
 EFI_STATUS
-EFIAPI
 ConsoleLoggerSetCursorPosition (
   IN  EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL  *This,
   IN  UINTN                         Column,
@@ -305,7 +292,6 @@ ConsoleLoggerSetCursorPosition (
 
 **/
 EFI_STATUS
-EFIAPI
 ConsoleLoggerEnableCursor (
   IN  EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL  *This,
   IN  BOOLEAN                          Visible
@@ -320,7 +306,6 @@ ConsoleLoggerEnableCursor (
   history buffers.
 **/
 EFI_STATUS
-EFIAPI
 ConsoleLoggerResetBuffers(
   IN CONSOLE_LOGGER_PRIVATE_DATA *ConsoleInfo
   );
