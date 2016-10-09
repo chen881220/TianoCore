@@ -33,7 +33,6 @@
 
 **/
 INTN
-EFIAPI
 ShellAppMain (
   IN UINTN Argc,
   IN CHAR16 **Argv
