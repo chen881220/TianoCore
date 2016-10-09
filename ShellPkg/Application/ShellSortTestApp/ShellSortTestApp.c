@@ -29,7 +29,6 @@
   @retval 1       b1 is greater then b2
 **/
 INTN
-EFIAPI
 Test(CONST VOID *b1, CONST VOID *b2)
 {
   if (*(INTN*)b1 == *(INTN*)b2) {
@@ -56,7 +55,6 @@ Test(CONST VOID *b1, CONST VOID *b2)
 
 **/
 INTN
-EFIAPI
 ShellAppMain (
   IN UINTN Argc,
   IN CHAR16 **Argv
