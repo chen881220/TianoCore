@@ -1815,3 +1815,33 @@ CatSDumpHex (
 
   return RetVal;
 }
+
+/**
+  Dump HEX data into buffer without offset.
+
+  @param[in]  DataSize	  The size in bytes of UserData.
+  @param[in]  UserData	  The data to print out.
+  @param[out] Buffer	    HEX data to be dumped in Buffer.
+**/
+CHAR8*
+DumpRawHex(
+  IN  UINTN   DataSize,
+  IN  VOID    *UserData,
+  OUT CHAR8   *Buffer
+  )
+{
+  UINT8 *Data;
+  UINT8 TempByte;
+  UINTN Index;
+
+  Data = UserData;
+  for (Index = 0; Index < DataSize; Index += 1) {
+    TempByte = Data[Index];
+    Buffer[Index * 3 + 0] = Hex[TempByte >> 4];
+    Buffer[Index * 3 + 1] = Hex[TempByte & 0xF];
+    Buffer[Index * 3 + 2] = ' ';
+  }
+  Buffer[Index * 3 - 1] = 0;
+
+  return Buffer;
+}

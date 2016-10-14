@@ -719,4 +719,18 @@ CatSDumpHex (
   IN UINTN   DataSize,
   IN VOID    *UserData
   );
+
+/**
+  Dump HEX data into buffer without offset.
+
+  @param[in]  DataSize	  The size in bytes of UserData.
+  @param[in]  UserData	  The data to print out.
+  @param[out] Buffer	    HEX data to be dumped in Buffer.
+**/
+CHAR8 *
+DumpRawHex(
+  IN  UINTN   DataSize,
+  IN  VOID    *UserData,
+  OUT CHAR8   *Buffer
+);
 #endif //_SHELL_COMMAND_LIB_

@@ -16,10 +16,11 @@
 #include "UefiShellDebug1CommandsLib.h"
 
 typedef enum {
-  DmpStoreDisplay,
-  DmpStoreDelete,
-  DmpStoreSave,
-  DmpStoreLoad
+  DmpStoreDisplay = 0x00000001,
+  DmpStoreDelete  = 0x00000002,
+  DmpStoreSave    = 0x00000004,
+  DmpStoreLoad    = 0x00000008,
+  DmpStoreSfo     = 0x00000010
 } DMP_STORE_TYPE;
 
 typedef struct {
@@ -459,50 +460,86 @@ CascadeProcessVariables (
         Status = gRT->GetVariable (FoundVarName, &FoundVarGuid, &Atts, &DataSize, DataBuffer);
       }
     }
-    if ((Type == DmpStoreDisplay) || (Type == DmpStoreSave)) {
+    if ((Type & DmpStoreDisplay) || (Type & DmpStoreSave)) {
       //
       // Last error check then print this variable out.
       //
       if (!EFI_ERROR(Status) && (DataBuffer != NULL) && (FoundVarName != NULL)) {
         RetString = GetAttrType(Atts);
+        if ((Type & DmpStoreSfo) && (Type & DmpStoreDisplay)) {
+          UINT8* RetData;
+          RetData = (UINT8 *)AllocateZeroPool(DataSize * 3 + 1);
+          if (RetData == NULL) {
+            Status = EFI_OUT_OF_RESOURCES;
+          } else {
+            ShellPrintHiiEx(
+              -1,
+              -1,
+              NULL,
+              STRING_TOKEN(STR_GEN_SFO_FORMAT),
+              gShellDebug1HiiHandle,
+              FoundVarName,
+              &FoundVarGuid,
+              RetString,
+              DataSize,
+              DumpRawHex(DataSize, DataBuffer, RetData)
+              );
+            SHELL_FREE_NON_NULL(RetData);
+          }
+        } else {
+          ShellPrintHiiEx(
+            -1,
+            -1,
+            NULL,
+            STRING_TOKEN(STR_DMPSTORE_HEADER_LINE),
+            gShellDebug1HiiHandle,
+            RetString,
+            &FoundVarGuid,
+            FoundVarName,
+            DataSize);
+          if (Type == DmpStoreDisplay) {
+            DumpHex(2, 0, DataSize, DataBuffer);
+          }
+          else {
+            Status = AppendSingleVariableToFile(
+              FileHandle,
+              FoundVarName,
+              &FoundVarGuid,
+              Atts,
+              (UINT32)DataSize,
+              DataBuffer
+            );
+          }
+        }
+        SHELL_FREE_NON_NULL(RetString);
+      }
+    } else if (Type & DmpStoreDelete) {
+      //
+      // We only need name to delete it...
+      //
+      EFI_STATUS RetStatus = gRT->SetVariable(FoundVarName, &FoundVarGuid, Atts, 0, NULL);
+      if (RetStatus == EFI_SUCCESS && Type&DmpStoreSfo) {
         ShellPrintHiiEx(
           -1,
           -1,
           NULL,
-          STRING_TOKEN(STR_DMPSTORE_HEADER_LINE),
+          STRING_TOKEN(STR_GEN_SFO_DELETE),
           gShellDebug1HiiHandle,
-          RetString,
+          FoundVarName,
+          &FoundVarGuid
+          );
+      }else {
+        ShellPrintHiiEx (
+          -1,
+          -1,
+          NULL,
+          STRING_TOKEN(STR_DMPSTORE_DELETE_LINE),
+          gShellDebug1HiiHandle,
           &FoundVarGuid,
           FoundVarName,
-          DataSize);
-        if (Type == DmpStoreDisplay) {
-          DumpHex(2, 0, DataSize, DataBuffer);
-        } else {
-          Status = AppendSingleVariableToFile (
-                     FileHandle,
-                     FoundVarName,
-                     &FoundVarGuid,
-                     Atts,
-                     (UINT32) DataSize,
-                     DataBuffer
-                     );
-        }
-        SHELL_FREE_NON_NULL(RetString);
+          RetStatus
+          );
       }
-    } else if (Type == DmpStoreDelete) {
-      //
-      // We only need name to delete it...
-      //
-      ShellPrintHiiEx (
-        -1,
-        -1,
-        NULL,
-        STRING_TOKEN(STR_DMPSTORE_DELETE_LINE),
-        gShellDebug1HiiHandle,
-        &FoundVarGuid,
-        FoundVarName,
-        gRT->SetVariable (FoundVarName, &FoundVarGuid, Atts, 0, NULL)
-        );
     }
     SHELL_FREE_NON_NULL(DataBuffer);
   }
@@ -550,7 +587,7 @@ ProcessVariables (
   ShellStatus   = SHELL_SUCCESS;
   ZeroMem (&FoundVarGuid, sizeof(EFI_GUID));
 
-  if (Type == DmpStoreLoad) {
+  if (Type & DmpStoreLoad) {
     ShellStatus = LoadVariablesFromFile (FileHandle, Name, Guid, &Found);
   } else {
     ShellStatus = CascadeProcessVariables(Name, Guid, Type, FileHandle, NULL, FoundVarGuid, &Found);
@@ -580,6 +617,7 @@ STATIC CONST SHELL_PARAM_ITEM ParamList[] = {
   {L"-s", TypeValue},
   {L"-all", TypeFlag},
   {L"-guid", TypeValue},
+  {L"-sfo", TypeFlag},
   {NULL, TypeMax}
   };
 
@@ -637,7 +675,11 @@ ShellCommandRunDmpStore (
     } else if ((ShellCommandLineGetFlag(Package, L"-s") || ShellCommandLineGetFlag(Package, L"-l")) && ShellCommandLineGetFlag(Package, L"-d")) {
       ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PARAM_CONFLICT), gShellDebug1HiiHandle, L"dmpstore", L"-l or -s", L"-d");  
       ShellStatus = SHELL_INVALID_PARAMETER;
-    } else {
+    } else if ((ShellCommandLineGetFlag(Package, L"-s") || ShellCommandLineGetFlag(Package, L"-l")) && ShellCommandLineGetFlag(Package, L"-sfo")) {
+      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN(STR_GEN_PARAM_CONFLICT), gShellDebug1HiiHandle, L"dmpstore", L"-l or -s", L"-sfo");
+      ShellStatus = SHELL_INVALID_PARAMETER;
+    }
+    else {
       //
       // Determine the GUID to search for based on -all and -guid parameters
       //
@@ -742,12 +784,16 @@ ShellCommandRunDmpStore (
         } else if (ShellCommandLineGetFlag(Package, L"-d")) {
           Type = DmpStoreDelete;
         }
+
+        if (ShellCommandLineGetFlag(Package, L"-sfo")) {
+          Type |= DmpStoreSfo;
+        }
       }
 
       if (ShellStatus == SHELL_SUCCESS) {
-        if (Type == DmpStoreSave) {
+        if (Type & DmpStoreSave) {
           ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_DMPSTORE_SAVE), gShellDebug1HiiHandle, File);
-        } else if (Type == DmpStoreLoad) {
+        } else if (Type & DmpStoreLoad) {
           ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_DMPSTORE_LOAD), gShellDebug1HiiHandle, File);
         }
         ShellStatus = ProcessVariables (Name, Guid, Type, FileHandle);
