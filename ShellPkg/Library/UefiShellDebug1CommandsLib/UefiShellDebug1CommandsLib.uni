@@ -49,6 +49,9 @@
 #string STR_GEN_FILE_IS_DIRECTORY #language en-US "%H%s%N: The file '%H%s%N' is a directory.\r\n"
 #string STR_GEN_SFO_HEADER        #language en-US "ShellCommand,"%s"\r\n"
 
+#string STR_GEN_SFO_EMPTY         #language en-US "VaraibleInfo,\"\",\"\",\"\",\"\",\"\"\r\n"
+#string STR_GEN_SFO_DELETE        #language en-US "VariableInfo,\"%s\",\"%g\",\"\",\"\",\"\"\r\n"
+#string STR_GEN_SFO_FORMAT        #language en-US "VariableInfo,\"%s\",\"%g\",\"%s\",\"0x%02x\",\"%a\"\r\n"
 
 #string STR_FILE_OPEN_FAIL        #language en-US "Unable to open file on '%B%s%N' with: %r.\r\n"
 #string STR_FILE_FIND_FAIL        #language en-US "%H%s%N: File not found - '%H%s%N'\r\n"
