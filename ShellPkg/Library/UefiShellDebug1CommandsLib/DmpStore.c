@@ -82,11 +82,11 @@ GetAttrType (
 }
 
 /**
-    Dump HEX data into buffer without any format.
+  Dump HEX data into buffer without any format.
 
-    @param[in]  DataSize	  The size in bytes of UserData.
-    @param[in]  UserData	  The data to print out.
-    @param[out] Buffer	    HEX data to be dumped in Buffer.
+  @param[in]  DataSize    The size in bytes of UserData.
+  @param[in]  UserData    The data to print out.
+  @param[out] Buffer      HEX data to be dumped in Buffer.
 **/
 CHAR8*
 DumpRawHex(
@@ -393,7 +393,7 @@ AppendSingleVariableToFile (
   @param[in] FoundVarGuid           The previous GUID from GetNextVariableName. ignored at start.
   @param[in] FoundOne               If a VariableName or Guid was specified and one was printed or
                                     deleted, then set this to TRUE, otherwise ignored.
-  @param[in] StandardFormatOutput   The flag indicate to "Strandard-Format Output".
+  @param[in] StandardFormatOutput   TRUE indicates Standard-Format Output.
 
   @retval SHELL_SUCCESS           The operation was successful.
   @retval SHELL_OUT_OF_RESOURCES  A memorty allocation failed.
@@ -420,7 +420,8 @@ CascadeProcessVariables (
   UINT32                    Atts;
   SHELL_STATUS              ShellStatus;
   UINTN                     NameSize;
-  CHAR16                    *RetString;
+  CHAR16                    *AttrString;
+  UINT8                     *HexString;
 
   if (ShellGetExecutionBreakFlag()) {
     return (SHELL_ABORTED);
@@ -498,12 +499,11 @@ CascadeProcessVariables (
     }
     if (Type == DmpStoreDisplay) {
       if (!EFI_ERROR(Status) && (DataBuffer != NULL) && (FoundVarName != NULL)) {
-        RetString = GetAttrType(Atts);
+        AttrString = GetAttrType(Atts);
         //Use Standard Format for output.
-        if ( StandardFormatOutput ) {
-          UINT8 *RetData;
-          RetData = (UINT8 *)AllocateZeroPool(DataSize * 3);
-          if (RetData != NULL) {
+        if (StandardFormatOutput) {
+          HexString = (UINT8 *)AllocateZeroPool(DataSize * 3);
+          if (HexString != NULL) {
             ShellPrintHiiEx(
               -1,
               -1,
@@ -512,9 +512,9 @@ CascadeProcessVariables (
               gShellDebug1HiiHandle,
               FoundVarName,
               &FoundVarGuid,
-              RetString,
+              AttrString,
               DataSize,
-              DumpRawHex(DataSize, DataBuffer, RetData)
+              DumpRawHex(DataSize, DataBuffer, HexString)
             );
           } else {
             Status = EFI_OUT_OF_RESOURCES;
@@ -526,25 +526,25 @@ CascadeProcessVariables (
             NULL,
             STRING_TOKEN(STR_DMPSTORE_HEADER_LINE),
             gShellDebug1HiiHandle,
-            RetString,
+            AttrString,
             &FoundVarGuid,
             FoundVarName,
             DataSize
           );
           DumpHex(2, 0, DataSize, DataBuffer);
         }
-        SHELL_FREE_NON_NULL(RetString);
+        SHELL_FREE_NON_NULL(AttrString);
       }
     } else if (Type == DmpStoreSave) {
       if (!EFI_ERROR(Status) && (DataBuffer != NULL) && (FoundVarName != NULL)) {
-        RetString = GetAttrType(Atts);
+        AttrString = GetAttrType(Atts);
         ShellPrintHiiEx(
           -1,
           -1,
           NULL,
           STRING_TOKEN(STR_DMPSTORE_HEADER_LINE),
           gShellDebug1HiiHandle,
-          RetString,
+          AttrString,
           &FoundVarGuid,
           FoundVarName,
           DataSize
@@ -557,7 +557,7 @@ CascadeProcessVariables (
           (UINT32)DataSize,
           DataBuffer
         );
-        SHELL_FREE_NON_NULL(RetString);
+        SHELL_FREE_NON_NULL(AttrString);
       }
     } else if (Type == DmpStoreDelete) {
       //
@@ -612,7 +612,7 @@ CascadeProcessVariables (
   @param[in] Guid                     The GUID of the variable set (or NULL).
   @param[in] Type                     The operation type.
   @param[in] FileHandle               The file to save or load variables.
-  @param[in] StandardFormatOutput     The flag indicate to "Standard-Format Output".
+  @param[in] StandardFormatOutput     TRUE indicates Standard-Format Output.
 
   @retval SHELL_SUCCESS           The operation was successful.
   @retval SHELL_OUT_OF_RESOURCES  A memorty allocation failed.
@@ -659,7 +659,7 @@ ProcessVariables (
       }
     } else if (Name == NULL && Guid != NULL) {
       if (StandardFormatOutput) {
-        ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN(STR_GEN_SFO_EMPTY), gShellDebug1HiiHandle);
+        ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN(STR_GEN_SFO_EMPTY_G), gShellDebug1HiiHandle, Guid);
       } else {
         ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN(STR_DMPSTORE_NO_VAR_FOUND_G), gShellDebug1HiiHandle, L"dmpstore", Guid);
       }
