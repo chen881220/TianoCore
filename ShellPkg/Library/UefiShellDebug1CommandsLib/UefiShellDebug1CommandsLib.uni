@@ -50,8 +50,9 @@
 #string STR_GEN_SFO_HEADER        #language en-US "ShellCommand,"%s"\r\n"
 
 #string STR_GEN_SFO_EMPTY         #language en-US "VariableInfo,\"\",\"\",\"\",\"\",\"\"\r\n"
-#string STR_GEN_SFO_EMPTY_G       #language en-US "VariableInfo,\"\",\"%g\",\"\",\"\",\"\"\r\n"
 #string STR_GEN_SFO_DELETE        #language en-US "VariableInfo,\"%s\",\"%g\",\"\",\"\",\"\"\r\n"
+#string STR_GEN_SFO_FORMAT_NGA    #language en-US "VariableInfo,\"%s\",\"%g\",\"%s\",\"\",\"\"\r\n"
+#string STR_GEN_SFO_FORMAT_G      #language en-US "VariableInfo,\"\",\"%g\",\"\",\"\",\"\"\r\n"
 #string STR_GEN_SFO_FORMAT        #language en-US "VariableInfo,\"%s\",\"%g\",\"%s\",\"0x%02x\",\"%a\"\r\n"
 
 #string STR_FILE_OPEN_FAIL        #language en-US "Unable to open file on '%B%s%N' with: %r.\r\n"
