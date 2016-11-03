@@ -119,11 +119,11 @@ DumpRawHex(
 /**
   Load the variable data from file and set to variable data base.
 
-  @param[in]  FileHandle            The file to be read.
-  @param[in]  Name                  The name of the variables to be loaded.
-  @param[in]  Guid                  The guid of the variables to be loaded.
-  @param[out] Found                 TRUE when at least one variable was loaded and set.
-  @param[in] StandardFormatOutput   TRUE indicates Standard-Format Output.
+  @param[in]  FileHandle     The file to be read.
+  @param[in]  Name           The name of the variables to be loaded.
+  @param[in]  Guid           The guid of the variables to be loaded.
+  @param[out] Found          TRUE when at least one variable was loaded and set.
+  @param[in]  StandardFormatOutput  TRUE indicates Standard-Format Output.
 
   @retval SHELL_DEVICE_ERROR      Cannot access the file.
   @retval SHELL_VOLUME_CORRUPTED  The file is in bad format.
@@ -401,14 +401,14 @@ AppendSingleVariableToFile (
 
   This is necessary since once a delete happens GetNextVariableName() will work.
 
-  @param[in] Name                   The variable name of the EFI variable (or NULL).
-  @param[in] Guid                   The GUID of the variable set (or NULL).
-  @param[in] Type                   The operation type.
-  @param[in] FileHandle             The file to operate on (or NULL).
-  @param[in] PrevName               The previous variable name from GetNextVariableName. L"" to start.
-  @param[in] FoundVarGuid           The previous GUID from GetNextVariableName. ignored at start.
-  @param[in] FoundOne               If a VariableName or Guid was specified and one was printed or
-                                    deleted, then set this to TRUE, otherwise ignored.
+  @param[in] Name           The variable name of the EFI variable (or NULL).
+  @param[in] Guid           The GUID of the variable set (or NULL).
+  @param[in] Type           The operation type.
+  @param[in] FileHandle     The file to operate on (or NULL).
+  @param[in] PrevName       The previous variable name from GetNextVariableName. L"" to start.
+  @param[in] FoundVarGuid   The previous GUID from GetNextVariableName. ignored at start.
+  @param[in] FoundOne       If a VariableName or Guid was specified and one was printed or
+                            deleted, then set this to TRUE, otherwise ignored.
   @param[in] StandardFormatOutput   TRUE indicates Standard-Format Output.
 
   @retval SHELL_SUCCESS           The operation was successful.
@@ -644,10 +644,10 @@ CascadeProcessVariables (
 /**
   Function to display or delete variables.  This will set up and call into the recursive function.
 
-  @param[in] Name                     The variable name of the EFI variable (or NULL).
-  @param[in] Guid                     The GUID of the variable set (or NULL).
-  @param[in] Type                     The operation type.
-  @param[in] FileHandle               The file to save or load variables.
+  @param[in] Name        The variable name of the EFI variable (or NULL).
+  @param[in] Guid        The GUID of the variable set (or NULL).
+  @param[in] Type        The operation type.
+  @param[in] FileHandle  The file to save or load variables.
   @param[in] StandardFormatOutput     TRUE indicates Standard-Format Output.
 
   @retval SHELL_SUCCESS           The operation was successful.
@@ -742,12 +742,12 @@ ShellCommandRunDmpStore (
   EFI_FILE_INFO     *FileInfo;
   BOOLEAN           StandardFormatOutput;
 
-  ShellStatus           = SHELL_SUCCESS;
-  Package               = NULL;
-  FileHandle            = NULL;
-  File                  = NULL;
-  Type                  = DmpStoreDisplay;
-  StandardFormatOutput  = FALSE;
+  ShellStatus   = SHELL_SUCCESS;
+  Package       = NULL;
+  FileHandle    = NULL;
+  File          = NULL;
+  Type          = DmpStoreDisplay;
+  StandardFormatOutput = FALSE;
 
   Status = ShellCommandLineParse (ParamList, &Package, &ProblemParam, TRUE);
   if (EFI_ERROR(Status)) {
