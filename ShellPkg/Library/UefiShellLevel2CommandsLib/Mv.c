@@ -89,13 +89,38 @@ IsValidMove(
 {
   CHAR16  *DestPathCopy;
   CHAR16  *DestPathWalker;
+  CHAR16  *SourcePathBuffer;
+  UINTN   SourcePathBufferSize;
 
-  if (Cwd != NULL && StrCmp(SourcePath, Cwd) == 0) {
-    //
-    // Invalid move
-    //
-    ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_MV_INV_CWD), gShellLevel2HiiHandle);
-    return (FALSE);
+  if (Cwd != NULL) {
+    if ((Attribute & EFI_FILE_DIRECTORY) == EFI_FILE_DIRECTORY) {
+      SourcePathBufferSize = StrSize (SourcePath) + sizeof(CHAR16);
+      if (SourcePath[StrLen (SourcePath)] != L'\\') {
+        SourcePathBuffer = AllocateZeroPool (SourcePathBufferSize);
+        if (SourcePathBuffer == NULL) {
+          return FALSE;
+        }
+        StrCpyS (SourcePathBuffer, SourcePathBufferSize / sizeof(CHAR16), SourcePath);
+        StrCatS (SourcePathBuffer, SourcePathBufferSize / sizeof(CHAR16), L"\\");
+        if (StringNoCaseCompare (&SourcePathBuffer, &Cwd) == 0) {
+          FreePool (SourcePathBuffer);
+          //
+          // Invalid move
+          //
+          ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_MV_INV_CWD), gShellLevel2HiiHandle);
+          return FALSE;
+        }
+        FreePool (SourcePathBuffer);
+      } else {
+        if (StringNoCaseCompare (&SourcePath, &Cwd) == 0) {
+          //
+          // Invalid move
+          //
+          ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_MV_INV_CWD), gShellLevel2HiiHandle);
+          return FALSE;
+        }
+      }
+    }
   }
 
   //
