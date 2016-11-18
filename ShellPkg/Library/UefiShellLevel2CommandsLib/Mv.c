@@ -58,6 +58,73 @@ IsBetweenFileSystem(
 }
 
 /**
+  function to determine if ParentPath is "above" ChildPath on file path tree.
+
+  @param ParentPath [in]  parent path
+  @param ChildPath  [in]  child path
+
+  @retval TRUE            ParentPath is "above" ChildPath on file path tree.
+  @retval FALSE           ParentPath is not "above" ChildPath on file path tree.
+**/
+BOOLEAN
+IsParentPath(
+  IN CONST CHAR16 *ParentPath,
+  IN CONST CHAR16 *ChildPath
+  )
+{
+  UINTN ParentPathSize;
+  UINTN ChildPathSize;
+  UINTN Index;
+
+  CHAR16 *ParentPathBuffer;
+  CHAR16 *ChildPathBuffer;
+
+  BOOLEAN Ret;
+  Ret = TRUE;
+
+  ParentPathSize = StrSize (ParentPath);
+  ChildPathSize = StrSize (ChildPath);
+
+  if (ParentPathSize == 0 || ChildPathSize == 0) {
+    return FALSE;
+  }
+
+  ParentPathBuffer = AllocatePool (ParentPathSize);
+  if (ParentPathBuffer == NULL) {
+    return FALSE;
+  }
+  for (Index = 0; Index < ParentPathSize / sizeof(CHAR16); Index += 1) {
+    if (ParentPath[Index] >= 'a' && ParentPath[Index] <= 'z') {
+      ParentPathBuffer[Index] = ParentPath[Index] - 32;
+    } else {
+      ParentPathBuffer[Index] = ParentPath[Index];
+    }
+  }
+
+  ChildPathBuffer = AllocatePool (ChildPathSize);
+  if (ChildPathBuffer == NULL) {
+    FreePool (ParentPathBuffer);
+    return FALSE;
+  }
+  for (Index = 0; Index < ChildPathSize / sizeof(CHAR16); Index += 1) {
+    if (ChildPath[Index] >= 'a' && ChildPath[Index] <= 'z') {
+      ChildPathBuffer[Index] = ChildPath[Index] - 32;
+    } else {
+      ChildPathBuffer[Index] = ChildPath[Index];
+    }
+  }
+
+  if (StrStr (ChildPathBuffer, ParentPathBuffer) == NULL) {
+    Ret = FALSE;
+  }
+
+  FreePool (ParentPathBuffer);
+  FreePool (ChildPathBuffer);
+
+  return Ret;
+}
+
+/**
   Function to validate that moving a specific file (FileName) to a specific
   location (DestPath) is valid.
 
@@ -89,13 +156,40 @@ IsValidMove(
 {
   CHAR16  *DestPathCopy;
   CHAR16  *DestPathWalker;
+  CHAR16  *SourcePathBuffer;
+  UINTN   SourcePathBufferSize;
 
-  if (Cwd != NULL && StrCmp(SourcePath, Cwd) == 0) {
-    //
-    // Invalid move
-    //
-    ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_MV_INV_CWD), gShellLevel2HiiHandle);
-    return (FALSE);
+  if (Cwd != NULL) {
+    if ((Attribute & EFI_FILE_DIRECTORY) == EFI_FILE_DIRECTORY) {
+      SourcePathBufferSize = StrSize (SourcePath) + sizeof(CHAR16);
+      if (SourcePath[StrLen (SourcePath)] != L'\\') {
+        SourcePathBuffer = AllocateZeroPool (SourcePathBufferSize);
+        if (SourcePathBuffer == NULL) {
+          return FALSE;
+        }
+        StrCpyS (SourcePathBuffer, SourcePathBufferSize / sizeof(CHAR16), SourcePath);
+        StrCatS (SourcePathBuffer, SourcePathBufferSize / sizeof(CHAR16), L"\\");
+        if (StringNoCaseCompare (&SourcePathBuffer, &Cwd) == 0 ||
+            IsParentPath (SourcePathBuffer,Cwd)
+           ) {
+          FreePool (SourcePathBuffer);
+          //
+          // Invalid move
+          //
+          ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_MV_INV_CWD), gShellLevel2HiiHandle);
+          return FALSE;
+        }
+        FreePool (SourcePathBuffer);
+      } else {
+        if (StringNoCaseCompare (&SourcePath, &Cwd) == 0 || IsParentPath (SourcePath,Cwd)) {
+          //
+          // Invalid move
+          //
+          ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_MV_INV_CWD), gShellLevel2HiiHandle);
+          return FALSE;
+        }
+      }
+    }
   }
 
   //

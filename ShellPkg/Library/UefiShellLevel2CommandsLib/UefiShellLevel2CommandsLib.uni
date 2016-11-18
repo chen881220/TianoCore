@@ -169,7 +169,7 @@
 #string STR_MV_OUTPUT             #language en-US "Moving %s -> %s\r\n"
 #string STR_MV_INV_SUB            #language en-US "Cannot move a directory into itself or its subdirectory.\r\n"
 #string STR_MV_INV_RO             #language en-US "Cannot move to or from a read-only file or directory '%B%s%N'\r\n"
-#string STR_MV_INV_CWD            #language en-US "Cannot move current working directory or its subdirectory.\r\n"
+#string STR_MV_INV_CWD            #language en-US "Cannot move current working directory or its parent directory.\r\n"
 
 #string STR_CP_OUTPUT             #language en-US "Copying %s -> %s\r\n"
 #string STR_CP_ERROR              #language en-US "%H%s%N: Could not copy - '%H%s%N'\r\n"
