@@ -1128,12 +1128,14 @@ FileInterfaceEnvRead(
 
 /**
   File style interface for Volatile Environment Variable (Write).
+  This function also caches the environment variable into gShellEnvVarList.
   
   @param[in] This              The pointer to the EFI_FILE_PROTOCOL object.
   @param[in, out] BufferSize   Size in bytes of Buffer.
   @param[in] Buffer            The pointer to the buffer to write.
   
-  @retval EFI_SUCCESS   The data was read.
+  @retval EFI_SUCCESS             The data was successfully write to variable.
+  @retval SHELL_OUT_OF_RESOURCES  A memory allocation failed.
 **/
 EFI_STATUS
 EFIAPI
@@ -1151,36 +1153,55 @@ FileInterfaceEnvVolWrite(
   NewSize     = 0;
 
   Status = SHELL_GET_ENVIRONMENT_VARIABLE(((EFI_FILE_PROTOCOL_ENVIRONMENT*)This)->Name, &NewSize, NewBuffer);
-  if (Status == EFI_BUFFER_TOO_SMALL){
-    NewBuffer = AllocateZeroPool(NewSize + *BufferSize + sizeof(CHAR16));
-    Status = SHELL_GET_ENVIRONMENT_VARIABLE(((EFI_FILE_PROTOCOL_ENVIRONMENT*)This)->Name, &NewSize, NewBuffer);
+  if (Status != EFI_BUFFER_TOO_SMALL && Status != EFI_NOT_FOUND) {
+    return Status;
   }
-  if (!EFI_ERROR(Status) && NewBuffer != NULL) {
-    while (((CHAR16*)NewBuffer)[NewSize/2] == CHAR_NULL) {
-      //
-      // We want to overwrite the CHAR_NULL
-      //
-      NewSize -= 2;
-    }
-    CopyMem((UINT8*)NewBuffer + NewSize + 2, Buffer, *BufferSize);
-    Status = SHELL_SET_ENVIRONMENT_VARIABLE_V(((EFI_FILE_PROTOCOL_ENVIRONMENT*)This)->Name, StrSize(NewBuffer), NewBuffer);
-    FreePool(NewBuffer);
-    return (Status);
-  } else {
-    SHELL_FREE_NON_NULL(NewBuffer);
-    return (SHELL_SET_ENVIRONMENT_VARIABLE_V(((EFI_FILE_PROTOCOL_ENVIRONMENT*)This)->Name, *BufferSize, Buffer));
+
+  NewBuffer = AllocateZeroPool (NewSize + *BufferSize + sizeof(CHAR16));
+  if (NewBuffer == NULL) {
+    return EFI_OUT_OF_RESOURCES;
   }
+
+  Status = SHELL_GET_ENVIRONMENT_VARIABLE(((EFI_FILE_PROTOCOL_ENVIRONMENT*)This)->Name, &NewSize, NewBuffer);
+  if (EFI_ERROR (Status) && Status != EFI_NOT_FOUND) {
+    FreePool (NewBuffer);
+    return Status;
+  }
+
+  CopyMem ((UINT8*)NewBuffer + StrSize(NewBuffer) - sizeof(CHAR16), Buffer, *BufferSize);
+  Status = ShellAddEnvVarToList(
+             ((EFI_FILE_PROTOCOL_ENVIRONMENT*)This)->Name,
+             NewBuffer, 
+             StrSize(NewBuffer),
+             EFI_VARIABLE_BOOTSERVICE_ACCESS);
+  if (Status != EFI_SUCCESS) {
+    FreePool (NewBuffer);
+    return Status;
+  }
+
+  Status = SHELL_SET_ENVIRONMENT_VARIABLE_V(
+             ((EFI_FILE_PROTOCOL_ENVIRONMENT*)This)->Name, 
+             StrSize(NewBuffer) - sizeof(CHAR16),
+             NewBuffer);
+  if (Status != EFI_SUCCESS) {
+    ShellRemvoeEnvVarFromList (((EFI_FILE_PROTOCOL_ENVIRONMENT*)This)->Name);
+  }
+
+  FreePool (NewBuffer);
+  return Status;
 }
 
 
 /**
   File style interface for Non Volatile Environment Variable (Write).
+  This function also caches the environment variable into gShellEnvVarList.
   
   @param[in] This              The pointer to the EFI_FILE_PROTOCOL object.
   @param[in, out] BufferSize   Size in bytes of Buffer.
   @param[in] Buffer            The pointer to the buffer to write.
   
-  @retval EFI_SUCCESS   The data was read.
+  @retval EFI_SUCCESS             The data was successfully write to variable.
+  @retval SHELL_OUT_OF_RESOURCES  A memory allocation failed.
 **/
 EFI_STATUS
 EFIAPI
@@ -1198,22 +1219,42 @@ FileInterfaceEnvNonVolWrite(
   NewSize     = 0;
 
   Status = SHELL_GET_ENVIRONMENT_VARIABLE(((EFI_FILE_PROTOCOL_ENVIRONMENT*)This)->Name, &NewSize, NewBuffer);
-  if (Status == EFI_BUFFER_TOO_SMALL){
-    NewBuffer = AllocateZeroPool(NewSize + *BufferSize);
-    Status = SHELL_GET_ENVIRONMENT_VARIABLE(((EFI_FILE_PROTOCOL_ENVIRONMENT*)This)->Name, &NewSize, NewBuffer);
+  if (Status != EFI_BUFFER_TOO_SMALL && Status != EFI_NOT_FOUND) {
+    return Status;
   }
-  if (!EFI_ERROR(Status)) {
-    CopyMem((UINT8*)NewBuffer + NewSize, Buffer, *BufferSize);
-    return (SHELL_SET_ENVIRONMENT_VARIABLE_NV(
-    ((EFI_FILE_PROTOCOL_ENVIRONMENT*)This)->Name,
-    NewSize + *BufferSize,
-    NewBuffer));
-  } else {
-    return (SHELL_SET_ENVIRONMENT_VARIABLE_NV(
-    ((EFI_FILE_PROTOCOL_ENVIRONMENT*)This)->Name,
-    *BufferSize,
-    Buffer));
+
+  NewBuffer = AllocateZeroPool (NewSize + *BufferSize + sizeof(CHAR16));
+  if (NewBuffer == NULL) {
+    return EFI_OUT_OF_RESOURCES;
   }
+
+  Status = SHELL_GET_ENVIRONMENT_VARIABLE(((EFI_FILE_PROTOCOL_ENVIRONMENT*)This)->Name, &NewSize, NewBuffer);
+  if (EFI_ERROR(Status) && Status != EFI_NOT_FOUND) {
+    FreePool (NewBuffer);
+    return Status;
+  }
+
+  CopyMem ((UINT8*)NewBuffer + StrSize(NewBuffer) - sizeof(CHAR16), Buffer, *BufferSize);
+  Status = ShellAddEnvVarToList(
+             ((EFI_FILE_PROTOCOL_ENVIRONMENT*)This)->Name,
+             NewBuffer,
+             NewSize + *BufferSize,
+             EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS);
+  if (Status != EFI_SUCCESS) {
+    FreePool(NewBuffer);
+    return Status;
+  }
+
+  Status = SHELL_SET_ENVIRONMENT_VARIABLE_NV(
+             ((EFI_FILE_PROTOCOL_ENVIRONMENT*)This)->Name,
+             StrSize(NewBuffer) - sizeof(CHAR16),
+             NewBuffer);
+  if (Status != EFI_SUCCESS) {
+    ShellRemvoeEnvVarFromList (((EFI_FILE_PROTOCOL_ENVIRONMENT*)This)->Name);
+  }
+
+  FreePool (NewBuffer);
+  return Status;
 }
 
 /**
