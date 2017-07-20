@@ -2467,6 +2467,514 @@ EnrollSignatureDatabase (
 }
 
 /**
+  This function to delete signature list or data, according by DeleteType.
+
+  @param[in]  PrivateData           Module's private data.
+  @param[in]  DeleteType            Indicate delete list or data.
+
+  @retval   EFI_SUCCESS             Success to update the signature list page
+  @retval   EFI_OUT_OF_RESOURCES    Unable to allocate required resources.
+**/
+EFI_STATUS
+DeleteSignatureEx (
+  IN SECUREBOOT_CONFIG_PRIVATE_DATA   *PrivateData,
+  IN SIGNATURE_DELETE_TYPE            DeleteType
+  )
+{
+  EFI_STATUS            Status;
+  EFI_SIGNATURE_LIST    *CertList;
+  EFI_SIGNATURE_LIST    *NewCertList;
+  EFI_SIGNATURE_DATA    *CertData;
+  UINTN                 DataSize;
+  UINTN                 RemainingSize;
+  UINT8                 *DataBuffer;
+  UINT8                 *NewDataBuffer;
+  UINT8                 CheckedCount;
+  UINT32                DataAttr;
+  UINT32                ListIndex;
+  UINT32                Offset;
+  UINT32                DataCount;
+  UINT32                Index;
+
+  Status        = EFI_SUCCESS;
+  DataSize      = 0;
+  DataBuffer    = NULL;
+  NewDataBuffer = NULL;
+  CheckedCount  = 0;
+  DataAttr      = 0;
+  ListIndex     = 0;
+  Offset        = 0;
+
+  Status = gRT->GetVariable (
+                  PrivateData->VariableName,
+                  &PrivateData->VendorGuid,
+                  &DataAttr,
+                  &DataSize,
+                  DataBuffer
+                );
+  if (EFI_ERROR(Status) && Status != EFI_BUFFER_TOO_SMALL) {
+    goto ON_EXIT;
+  }
+
+  DataBuffer = AllocateZeroPool (DataSize);
+  if (DataBuffer == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto ON_EXIT;
+  }
+
+  Status = gRT->GetVariable (
+                  PrivateData->VariableName,
+                  &PrivateData->VendorGuid,
+                  &DataAttr,
+                  &DataSize,
+                  DataBuffer
+                );
+  if (EFI_ERROR(Status)) {
+    goto ON_EXIT;
+  }
+
+  NewDataBuffer = AllocateZeroPool (DataSize);
+  if (NewDataBuffer == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto ON_EXIT;
+  }
+
+  Status = SetSecureBootMode (CUSTOM_SECURE_BOOT_MODE);
+  if (EFI_ERROR(Status)) {
+    goto ON_EXIT;
+  }
+
+  RemainingSize = DataSize;
+  CertList = (EFI_SIGNATURE_LIST *)DataBuffer;
+
+  while ((RemainingSize > 0) && (RemainingSize >= CertList->SignatureListSize) && DeleteType != DELETE_ALL_SIGNATURE_LIST) {
+    DataCount = (CertList->SignatureListSize - sizeof(EFI_SIGNATURE_LIST) - CertList->SignatureHeaderSize) / CertList->SignatureSize;
+    for (Index = 0; Index < DataCount; Index++) {
+      if (PrivateData->CheckArray[Index]) {
+        CheckedCount++;
+      }
+    }
+    if (CheckedCount == DataCount || DeleteType == DELETE_ONE_SIGNATURE_LIST) {
+      //
+      //  All of signature data item has been checked, so skip this signature list.
+      //
+      ;
+    } else if (PrivateData->ListIndex != ListIndex) {
+      //
+      //  The current signature list will be not deleted.
+      //
+      CopyMem(NewDataBuffer + Offset, CertList, CertList->SignatureListSize);
+      Offset += CertList->SignatureListSize;
+    } else if (DeleteType == DELETE_SIGNATURE_DATA) {
+      NewCertList = (EFI_SIGNATURE_LIST *)(NewDataBuffer + Offset);
+      //
+      //  Copy header.
+      //
+      CopyMem(NewDataBuffer + Offset, CertList, sizeof(EFI_SIGNATURE_LIST) + CertList->SignatureHeaderSize);
+      Offset += sizeof(EFI_SIGNATURE_LIST) + CertList->SignatureHeaderSize;
+      
+      //
+      //  Copy data.
+      //
+      CertData = (EFI_SIGNATURE_DATA *)((UINT8 *)(CertList) + sizeof (EFI_SIGNATURE_LIST) + CertList->SignatureHeaderSize);
+      for (Index = 0; Index < DataCount; Index++) {
+        if (PrivateData->CheckArray[Index]) {
+          //
+          //  Skip unchecked data item.
+          //
+          NewCertList->SignatureListSize -= NewCertList->SignatureSize;
+        } else {
+          CopyMem (NewDataBuffer + Offset, (UINT8 *)CertData, NewCertList->SignatureSize);
+          Offset += NewCertList->SignatureSize;
+        }
+        CertData = (EFI_SIGNATURE_DATA *)((UINT8 *)CertData + NewCertList->SignatureSize);
+      }
+    }
+
+    RemainingSize -= CertList->SignatureListSize;
+    CertList = (EFI_SIGNATURE_LIST *)((UINT8 *)CertList + CertList->SignatureListSize);
+    ListIndex++;
+  }
+
+  DataSize = Offset;
+  if ((DataAttr & EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS) != 0) {
+    Status = CreateTimeBasedPayload (&DataSize, &NewDataBuffer);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((EFI_D_ERROR, "Fail to create time-based data payload: %r", Status));
+      goto ON_EXIT;
+    }
+  }
+
+  Status = gRT->SetVariable (
+                  PrivateData->VariableName,
+                  &PrivateData->VendorGuid,
+                  DataAttr,
+                  DataSize,
+                  NewDataBuffer
+                );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "Failed to set variable, Status = %r\n", Status));
+    goto ON_EXIT;
+  }
+
+ON_EXIT:
+  SECURE_BOOT_FREE_NON_NULL (DataBuffer);
+  SECURE_BOOT_FREE_NON_NULL (NewDataBuffer);
+
+  return Status;
+}
+
+/**
+  This function to load signature data.
+
+  @param[in]  PrivateData         Module's private data.
+  @param[in]  LabelNumber         Label number to insert opcodes.
+  @param[in]  FormId              Form ID of current page.
+  @param[in]  QuestionIdBase      Base question id of the signature list.
+  @param[in]  ListIndex           Indicate which list will be loaded.
+
+  @retval   EFI_SUCCESS           Success to update the signature list page
+  @retval   EFI_OUT_OF_RESOURCES  Unable to allocate required resources.
+**/
+EFI_STATUS
+LoadSignatureData (
+  IN SECUREBOOT_CONFIG_PRIVATE_DATA   *PrivateData,
+  IN UINT16                           LabelNumber,
+  IN EFI_FORM_ID                      FormId,
+  IN EFI_QUESTION_ID                  QuestionIdBase,
+  IN UINT16                           ListIndex
+  )
+{
+  EFI_STATUS                  Status;
+  EFI_IFR_GUID_LABEL          *StartLabel;
+  EFI_IFR_GUID_LABEL          *EndLabel;
+  EFI_SIGNATURE_LIST          *CertList;
+  EFI_SIGNATURE_DATA          *CertData;
+  EFI_STRING_ID               CertListType;
+  VOID                        *StartOpCodeHandle;
+  VOID                        *EndOpCodeHandle;
+  UINTN                       DataSize;
+  UINTN                       RemainingSize;
+  UINT8                       *Data;
+  UINT8                       Index;
+  UINT32                      DataCount;
+  CHAR16                      *GuidString;
+  CHAR16                      *NameBuffer;
+
+  Status            = EFI_SUCCESS;
+  CertList          = NULL;
+  CertData          = NULL;
+  StartOpCodeHandle = NULL;
+  EndOpCodeHandle   = NULL;
+  DataSize          = 0;
+  RemainingSize     = 0;
+  Data              = NULL;
+  Index             = 0;
+  GuidString        = NULL;
+  NameBuffer        = NULL;
+
+  //
+  // Initialize the container for dynamic opcodes.
+  //
+  StartOpCodeHandle = HiiAllocateOpCodeHandle ();
+  if (StartOpCodeHandle == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto ON_EXIT;
+  }
+
+  EndOpCodeHandle = HiiAllocateOpCodeHandle ();
+  if (EndOpCodeHandle == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto ON_EXIT;
+  }
+
+  //
+  // Create Hii Extend Label OpCode.
+  //
+  StartLabel = (EFI_IFR_GUID_LABEL *)HiiCreateGuidOpCode (
+                                       StartOpCodeHandle,
+                                       &gEfiIfrTianoGuid,
+                                       NULL,
+                                       sizeof(EFI_IFR_GUID_LABEL)
+                                     );
+  StartLabel->ExtendOpCode = EFI_IFR_EXTEND_OP_LABEL;
+  StartLabel->Number = LabelNumber;
+
+  EndLabel = (EFI_IFR_GUID_LABEL *)HiiCreateGuidOpCode (
+                                     EndOpCodeHandle,
+                                     &gEfiIfrTianoGuid,
+                                     NULL,
+                                     sizeof(EFI_IFR_GUID_LABEL)
+                                   );
+  EndLabel->ExtendOpCode = EFI_IFR_EXTEND_OP_LABEL;
+  EndLabel->Number = LABEL_END;
+
+  //
+  // Read Variable.
+  //
+  Status = gRT->GetVariable (PrivateData->VariableName, &PrivateData->VendorGuid, NULL, &DataSize, Data);
+  if (EFI_ERROR(Status) && Status != EFI_BUFFER_TOO_SMALL) {
+    goto ON_EXIT;
+  }
+
+  Data = (UINT8 *)AllocateZeroPool (DataSize);
+  if (Data == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto ON_EXIT;
+  }
+
+  Status = gRT->GetVariable (PrivateData->VariableName, &PrivateData->VendorGuid, NULL, &DataSize, Data);
+  if (EFI_ERROR(Status)) {
+    goto ON_EXIT;
+  }
+
+  RemainingSize = (UINT32)DataSize;
+  CertList = (EFI_SIGNATURE_LIST *)Data;
+
+  //
+  //  Skip unload signature list.
+  //
+  while ((RemainingSize > 0) && (RemainingSize >= CertList->SignatureListSize) && ListIndex-- > 0) {
+    RemainingSize -= CertList->SignatureListSize;
+    CertList = (EFI_SIGNATURE_LIST *)((UINT8 *)CertList + CertList->SignatureListSize);
+  }
+
+  GuidString = AllocateZeroPool (100);
+  if (GuidString == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto ON_EXIT;
+  }
+
+  NameBuffer = AllocateZeroPool (100);
+  if (NameBuffer == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto ON_EXIT;
+  }
+
+  if (CompareGuid(&CertList->SignatureType, &gEfiCertRsa2048Guid)) {
+    CertListType = STRING_TOKEN (STR_CERT_TYPE_RSA2048_SHA256_GUID);
+  } else if (CompareGuid (&CertList->SignatureType, &gEfiCertX509Guid)) {
+    CertListType = STRING_TOKEN (STR_CERT_TYPE_PCKS7_GUID);
+  } else if (CompareGuid (&CertList->SignatureType, &gEfiCertSha1Guid)) {
+    CertListType = STRING_TOKEN (STR_CERT_TYPE_SHA1_GUID);
+  } else if (CompareGuid (&CertList->SignatureType, &gEfiCertSha256Guid)) {
+    CertListType = STRING_TOKEN (STR_CERT_TYPE_SHA256_GUID);
+  } else if (CompareGuid (&CertList->SignatureType, &gEfiCertX509Sha256Guid)) {
+    CertListType = STRING_TOKEN (STR_CERT_TYPE_X509_SHA256_GUID);
+  } else if (CompareGuid (&CertList->SignatureType, &gEfiCertX509Sha384Guid)) {
+    CertListType = STRING_TOKEN (STR_CERT_TYPE_X509_SHA384_GUID);
+  } else if (CompareGuid (&CertList->SignatureType, &gEfiCertX509Sha512Guid)) {
+    CertListType = STRING_TOKEN (STR_CERT_TYPE_X509_SHA512_GUID);
+  } else {
+    CertListType = STRING_TOKEN (STR_CERT_TYPE_UN_KNOWN_GUID);
+  }
+
+  DataCount = (CertList->SignatureListSize - sizeof (EFI_SIGNATURE_LIST) - CertList->SignatureHeaderSize) / CertList->SignatureSize;
+  CertData = (EFI_SIGNATURE_DATA *)((UINT8 *)CertList + sizeof (EFI_SIGNATURE_LIST) + CertList->SignatureHeaderSize);
+  for (Index = 0; Index < DataCount; Index++) {
+    GuidToString (&CertData->SignatureOwner, GuidString, 100);
+    UnicodeSPrint (NameBuffer, 100, L"%s, Index = %d.", GuidString, Index + 1);
+    HiiCreateCheckBoxOpCode (
+      StartOpCodeHandle,
+      (EFI_QUESTION_ID)(QuestionIdBase + Index),
+      0,
+      0,
+      HiiSetString (PrivateData->HiiHandle, 0, NameBuffer, NULL),
+      CertListType,
+      EFI_IFR_FLAG_CALLBACK,
+      0,
+      NULL
+    );
+    ZeroMem (NameBuffer, 100);
+    CertData = (EFI_SIGNATURE_DATA *)((UINT8 *)CertData + CertList->SignatureSize);
+  }
+
+  //
+  //  Allocate a buffer to record which data item will be checked.
+  //
+  PrivateData->CheckArray = AllocateZeroPool (DataCount * sizeof(BOOLEAN));
+
+ON_EXIT:
+  HiiUpdateForm (
+    PrivateData->HiiHandle,
+    &gSecureBootConfigFormSetGuid,
+    FormId,
+    StartOpCodeHandle,
+    EndOpCodeHandle
+  );
+
+  if (StartOpCodeHandle != NULL) {
+    HiiFreeOpCodeHandle (StartOpCodeHandle);
+  }
+
+  if (EndOpCodeHandle != NULL) {
+    HiiFreeOpCodeHandle (EndOpCodeHandle);
+  }
+
+  SECURE_BOOT_FREE_NON_NULL (Data);
+  SECURE_BOOT_FREE_NON_NULL (GuidString);
+  SECURE_BOOT_FREE_NON_NULL (NameBuffer);
+
+  return Status;
+}
+
+/**
+  This function to load signature list.
+
+  @param[in]  PrivateData         Module's private data.
+  @param[in]  LabelNumber         Label number to insert opcodes.
+  @param[in]  FormId              Form ID of current page.
+  @param[in]  QuestionIdBase      Base question id of the signature list.
+
+  @retval   EFI_SUCCESS           Success to update the signature list page
+  @retval   EFI_OUT_OF_RESOURCES  Unable to allocate required resources.
+**/
+EFI_STATUS
+LoadSignatureList (
+  IN SECUREBOOT_CONFIG_PRIVATE_DATA   *PrivateData,
+  IN UINT16                           LabelNumber,
+  IN EFI_FORM_ID                      FormId,
+  IN EFI_QUESTION_ID                  QuestionIdBase
+  )
+{
+  EFI_STATUS                  Status;
+  EFI_IFR_GUID_LABEL          *StartLabel;
+  EFI_IFR_GUID_LABEL          *EndLabel;
+  EFI_SIGNATURE_LIST          *CertList;
+  EFI_STRING_ID               CertListType;
+  VOID                        *StartOpCodeHandle;
+  VOID                        *EndOpCodeHandle;
+  UINTN                       DataSize;
+  UINTN                       RemainingSize;
+  UINT8                       *Data;
+  UINT8                       Index;
+
+  Status = EFI_SUCCESS;
+  StartOpCodeHandle = NULL;
+  EndOpCodeHandle = NULL;
+  Data = NULL;
+  Index = 0;
+
+  //
+  // Initialize the container for dynamic opcodes.
+  //
+  StartOpCodeHandle = HiiAllocateOpCodeHandle ();
+  if (StartOpCodeHandle == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto ON_EXIT;
+  }
+
+  EndOpCodeHandle = HiiAllocateOpCodeHandle ();
+  if (EndOpCodeHandle == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto ON_EXIT;
+  }
+
+  //
+  // Create Hii Extend Label OpCode.
+  //
+  StartLabel = (EFI_IFR_GUID_LABEL *)HiiCreateGuidOpCode (
+                                       StartOpCodeHandle,
+                                       &gEfiIfrTianoGuid,
+                                       NULL,
+                                       sizeof(EFI_IFR_GUID_LABEL)
+                                     );
+  StartLabel->ExtendOpCode = EFI_IFR_EXTEND_OP_LABEL;
+  StartLabel->Number = LabelNumber;
+
+  EndLabel = (EFI_IFR_GUID_LABEL *)HiiCreateGuidOpCode (
+                                     EndOpCodeHandle,
+                                     &gEfiIfrTianoGuid,
+                                     NULL,
+                                     sizeof(EFI_IFR_GUID_LABEL)
+                                   );
+  EndLabel->ExtendOpCode = EFI_IFR_EXTEND_OP_LABEL;
+  EndLabel->Number = LABEL_END;
+
+  //
+  // Read Variable.
+  //
+  DataSize = 0;
+  Status = gRT->GetVariable (PrivateData->VariableName, &PrivateData->VendorGuid, NULL, &DataSize, Data);
+  if (EFI_ERROR (Status) && Status != EFI_BUFFER_TOO_SMALL) {
+    goto ON_EXIT;
+  }
+
+  Data = (UINT8 *)AllocateZeroPool (DataSize);
+  if (Data == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto ON_EXIT;
+  }
+
+  Status = gRT->GetVariable (PrivateData->VariableName, &PrivateData->VendorGuid, NULL, &DataSize, Data);
+  if (EFI_ERROR  (Status)) {
+    goto ON_EXIT;
+  }
+
+  RemainingSize = (UINT32)DataSize;
+  CertList = (EFI_SIGNATURE_LIST *)Data;
+
+  while ((RemainingSize > 0) && (RemainingSize >= CertList->SignatureListSize)) {
+    if (CompareGuid (&CertList->SignatureType, &gEfiCertRsa2048Guid)) {
+      CertListType = STRING_TOKEN (STR_CERT_TYPE_RSA2048_SHA256_GUID);
+    } else if (CompareGuid (&CertList->SignatureType, &gEfiCertX509Guid)) {
+      CertListType = STRING_TOKEN (STR_CERT_TYPE_PCKS7_GUID);
+    } else if (CompareGuid (&CertList->SignatureType, &gEfiCertSha1Guid)) {
+      CertListType = STRING_TOKEN (STR_CERT_TYPE_SHA1_GUID);
+    } else if (CompareGuid (&CertList->SignatureType, &gEfiCertSha256Guid)) {
+      CertListType = STRING_TOKEN (STR_CERT_TYPE_SHA256_GUID);
+    } else if (CompareGuid (&CertList->SignatureType, &gEfiCertX509Sha256Guid)) {
+      CertListType = STRING_TOKEN (STR_CERT_TYPE_X509_SHA256_GUID);
+    } else if (CompareGuid (&CertList->SignatureType, &gEfiCertX509Sha384Guid)) {
+      CertListType = STRING_TOKEN (STR_CERT_TYPE_X509_SHA384_GUID);
+    } else if (CompareGuid (&CertList->SignatureType, &gEfiCertX509Sha512Guid)) {
+      CertListType = STRING_TOKEN (STR_CERT_TYPE_X509_SHA512_GUID);
+    } else {
+      CertListType = STRING_TOKEN (STR_CERT_TYPE_UN_KNOWN_GUID);
+    }
+
+    HiiCreateGotoOpCode (
+      StartOpCodeHandle,
+      SECUREBOOT_SHOW_SIGNATURE_DATA_FORM,
+      CertListType,
+      CertListType,
+      EFI_IFR_FLAG_CALLBACK,
+      QuestionIdBase + Index++
+    );
+
+    RemainingSize -= CertList->SignatureListSize;
+    CertList = (EFI_SIGNATURE_LIST *)((UINT8 *)CertList + CertList->SignatureListSize);
+  }
+
+ON_EXIT:
+  HiiUpdateForm (
+    PrivateData->HiiHandle,
+    &gSecureBootConfigFormSetGuid,
+    FormId,
+    StartOpCodeHandle,
+    EndOpCodeHandle
+  );
+
+  if (StartOpCodeHandle != NULL) {
+    HiiFreeOpCodeHandle (StartOpCodeHandle);
+  }
+
+  if (EndOpCodeHandle != NULL) {
+    HiiFreeOpCodeHandle (EndOpCodeHandle);
+  }
+
+  SECURE_BOOT_FREE_NON_NULL (Data);
+
+  if (Index > 0) {
+    PrivateData->HasSignautreList = TRUE;
+  } else {
+    PrivateData->HasSignautreList = FALSE;
+  }
+
+  return Status;
+}
+
+/**
   List all signatures in specified signature database (e.g. KEK/DB/DBX/DBT)
   by GUID in the page for user to select and delete as needed.
 
@@ -3474,6 +3982,8 @@ SecureBootCallback (
           (QuestionId == KEY_SECURE_BOOT_DBX_OPTION) ||
           (QuestionId == KEY_SECURE_BOOT_DBT_OPTION)) {
         CloseEnrolledFile(Private->FileContext);
+      } else if (QuestionId == KEY_VALUE_DELETE_ALL_SIGNATURE_LIST) {
+        IfrNvData->HasSignatureList = Private->HasSignautreList;
       }
     }
     goto EXIT;
@@ -3654,39 +4164,79 @@ SecureBootCallback (
         );
       break;
 
-    case SECUREBOOT_DELETE_SIGNATURE_FROM_DB:
-      UpdateDeletePage (
+    case KEY_VALUE_DELETE_GOTO_DB_FORM:
+      ZeroMem (Private->VariableName, 16);
+      CopyMem (Private->VariableName, EFI_IMAGE_SECURITY_DATABASE, StrSize (EFI_IMAGE_SECURITY_DATABASE));
+      CopyGuid (&Private->VendorGuid, &gEfiImageSecurityDatabaseGuid);
+      LoadSignatureList (
         Private,
-        EFI_IMAGE_SECURITY_DATABASE,
-        &gEfiImageSecurityDatabaseGuid,
-        LABEL_DB_DELETE,
-        SECUREBOOT_DELETE_SIGNATURE_FROM_DB,
-        OPTION_DEL_DB_QUESTION_ID
-        );
-       break;
-
-    case SECUREBOOT_DELETE_SIGNATURE_FROM_DBX:
-      UpdateDeletePage (
-        Private,
-        EFI_IMAGE_SECURITY_DATABASE1,
-        &gEfiImageSecurityDatabaseGuid,
-        LABEL_DBX_DELETE,
-        SECUREBOOT_DELETE_SIGNATURE_FROM_DBX,
-        OPTION_DEL_DBX_QUESTION_ID
-        );
-
+        LABEL_SIGNATURE_LIST_START,
+        SECUREBOOT_SHOW_SIGNATURE_LIST_FORM,
+        OPTION_SIGNATURE_LIST_QUESTION_ID
+      );
       break;
 
-    case SECUREBOOT_DELETE_SIGNATURE_FROM_DBT:
-      UpdateDeletePage (
+    case KEY_VALUE_DELETE_GOTO_DBX_FORM:
+      ZeroMem (Private->VariableName, 16);
+      CopyMem (Private->VariableName, EFI_IMAGE_SECURITY_DATABASE1, StrSize (EFI_IMAGE_SECURITY_DATABASE1));
+      CopyGuid (&Private->VendorGuid, &gEfiImageSecurityDatabaseGuid);
+      LoadSignatureList (
         Private,
-        EFI_IMAGE_SECURITY_DATABASE2,
-        &gEfiImageSecurityDatabaseGuid,
-        LABEL_DBT_DELETE,
-        SECUREBOOT_DELETE_SIGNATURE_FROM_DBT,
-        OPTION_DEL_DBT_QUESTION_ID
-        );
+        LABEL_SIGNATURE_LIST_START,
+        SECUREBOOT_SHOW_SIGNATURE_LIST_FORM,
+        OPTION_SIGNATURE_LIST_QUESTION_ID
+      );
+      break;
 
+    case KEY_VALUE_DELETE_GOTO_DBT_FORM:
+      ZeroMem (Private->VariableName, 16);
+      CopyMem (Private->VariableName, EFI_IMAGE_SECURITY_DATABASE2, StrSize (EFI_IMAGE_SECURITY_DATABASE2));
+      CopyGuid (&Private->VendorGuid, &gEfiImageSecurityDatabaseGuid);
+      LoadSignatureList (
+        Private,
+        LABEL_SIGNATURE_LIST_START,
+        SECUREBOOT_SHOW_SIGNATURE_LIST_FORM,
+        OPTION_SIGNATURE_LIST_QUESTION_ID
+      );
+      break;
+
+    case KEY_VALUE_DELETE_ALL_SIGNATURE_LIST:
+      CreatePopUp (
+        EFI_LIGHTGRAY | EFI_BACKGROUND_BLUE,
+        &Key,
+        L"Press 'y' to delete all signature list.",
+        L"    Or press other keys to cancel.",
+        NULL
+      );
+      if (Key.UnicodeChar == L'Y' || Key.UnicodeChar == L'y') {
+        DeleteSignatureEx (Private, DELETE_ALL_SIGNATURE_LIST);
+      }
+      break;
+
+    case KEY_VALUE_DELETE_ALL_SIGNATURE_DATA:
+      CreatePopUp (
+        EFI_LIGHTGRAY | EFI_BACKGROUND_BLUE,
+        &Key,
+        L"Press 'y' to delete all signature data.",
+        L"    Or press other keys to cancel.",
+        NULL
+      );
+      if (Key.UnicodeChar == L'Y' || Key.UnicodeChar == L'y') {
+        DeleteSignatureEx (Private, DELETE_ONE_SIGNATURE_LIST);
+      }
+      break;
+
+    case KEY_VALUE_DELETE_CHECK_SIGNATURE_DATA:
+      CreatePopUp (
+        EFI_LIGHTGRAY | EFI_BACKGROUND_BLUE,
+        &Key,
+        L"Press 'y' to delete checked signature data.",
+        L"      Or press other keys to cancel.",
+        NULL
+      );
+      if (Key.UnicodeChar == L'Y' || Key.UnicodeChar == L'y') {
+        DeleteSignatureEx (Private, DELETE_SIGNATURE_DATA);
+      }
       break;
 
     case KEY_VALUE_SAVE_AND_EXIT_KEK:
@@ -3788,39 +4338,30 @@ SecureBootCallback (
       if ((QuestionId >= OPTION_DEL_KEK_QUESTION_ID) &&
                  (QuestionId < (OPTION_DEL_KEK_QUESTION_ID + OPTION_CONFIG_RANGE))) {
         DeleteKeyExchangeKey (Private, QuestionId);
-      } else if ((QuestionId >= OPTION_DEL_DB_QUESTION_ID) &&
-                 (QuestionId < (OPTION_DEL_DB_QUESTION_ID + OPTION_CONFIG_RANGE))) {
-        DeleteSignature (
+      } else if ( (QuestionId >= OPTION_SIGNATURE_LIST_QUESTION_ID) &&
+                  (QuestionId < OPTION_SIGNATURE_LIST_QUESTION_ID + OPTION_CONFIG_RANGE)
+                ) {
+        LoadSignatureData (
           Private,
-          EFI_IMAGE_SECURITY_DATABASE,
-          &gEfiImageSecurityDatabaseGuid,
-          LABEL_DB_DELETE,
-          SECUREBOOT_DELETE_SIGNATURE_FROM_DB,
-          OPTION_DEL_DB_QUESTION_ID,
-          QuestionId - OPTION_DEL_DB_QUESTION_ID
-          );
-      } else if ((QuestionId >= OPTION_DEL_DBX_QUESTION_ID) &&
-                 (QuestionId < (OPTION_DEL_DBX_QUESTION_ID + OPTION_CONFIG_RANGE))) {
-        DeleteSignature (
-          Private,
-          EFI_IMAGE_SECURITY_DATABASE1,
-          &gEfiImageSecurityDatabaseGuid,
-          LABEL_DBX_DELETE,
-          SECUREBOOT_DELETE_SIGNATURE_FROM_DBX,
-          OPTION_DEL_DBX_QUESTION_ID,
-          QuestionId - OPTION_DEL_DBX_QUESTION_ID
-          );
-      } else if ((QuestionId >= OPTION_DEL_DBT_QUESTION_ID) &&
-                 (QuestionId < (OPTION_DEL_DBT_QUESTION_ID + OPTION_CONFIG_RANGE))) {
-        DeleteSignature (
-          Private,
-          EFI_IMAGE_SECURITY_DATABASE2,
-          &gEfiImageSecurityDatabaseGuid,
-          LABEL_DBT_DELETE,
-          SECUREBOOT_DELETE_SIGNATURE_FROM_DBT,
-          OPTION_DEL_DBT_QUESTION_ID,
-          QuestionId - OPTION_DEL_DBT_QUESTION_ID
-          );
+          LABEL_SIGNATURE_DATA_START,
+          SECUREBOOT_SHOW_SIGNATURE_DATA_FORM,
+          OPTION_SIGNATURE_DATA_QUESTION_ID,
+          QuestionId - OPTION_SIGNATURE_LIST_QUESTION_ID
+        );
+        Private->ListIndex = QuestionId - OPTION_SIGNATURE_LIST_QUESTION_ID;
+      } else if ( (QuestionId >= OPTION_SIGNATURE_DATA_QUESTION_ID) &&
+                  (QuestionId < OPTION_SIGNATURE_DATA_QUESTION_ID + OPTION_CONFIG_RANGE)
+                ) {
+        //
+        // Record which data item has been choosen.
+        //
+        if (Private->CheckArray[QuestionId - OPTION_SIGNATURE_DATA_QUESTION_ID]) {
+          IfrNvData->CheckedDataCount++;
+          Private->CheckArray[QuestionId - OPTION_SIGNATURE_DATA_QUESTION_ID] = FALSE;
+        } else {
+          IfrNvData->CheckedDataCount--;
+          Private->CheckArray[QuestionId - OPTION_SIGNATURE_DATA_QUESTION_ID] = TRUE;
+        }
       }
       break;
 
@@ -3898,6 +4439,13 @@ SecureBootCallback (
     }
     if (SecureBootMode != NULL) {
       FreePool (SecureBootMode);
+    }
+
+    //
+    //  Free array when leave SECUREBOOT_SHOW_SIGNATURE_DATA_FORM form.
+    //
+    if (QuestionId == KEY_VALUE_DELETE_ALL_SIGNATURE_DATA) {
+      SECURE_BOOT_FREE_NON_NULL (Private->CheckArray);
     }
   }
 

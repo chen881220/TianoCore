@@ -293,11 +293,11 @@ formset
 
     subtitle text = STRING_TOKEN(STR_NULL);
 
-    goto SECUREBOOT_DELETE_SIGNATURE_FROM_DB,
+    goto SECUREBOOT_SHOW_SIGNATURE_LIST_FORM,
     prompt = STRING_TOKEN (STR_SECURE_BOOT_DELETE_SIGNATURE),
     help   = STRING_TOKEN (STR_SECURE_BOOT_DELETE_SIGNATURE),
     flags  = INTERACTIVE,
-    key    = SECUREBOOT_DELETE_SIGNATURE_FROM_DB;
+    key    = KEY_VALUE_DELETE_GOTO_DB_FORM;
 
   endform;
 
@@ -316,11 +316,11 @@ formset
 
     subtitle text = STRING_TOKEN(STR_NULL);
 
-    goto SECUREBOOT_DELETE_SIGNATURE_FROM_DBX,
+    goto SECUREBOOT_SHOW_SIGNATURE_LIST_FORM,
     prompt = STRING_TOKEN (STR_SECURE_BOOT_DELETE_SIGNATURE),
     help   = STRING_TOKEN (STR_SECURE_BOOT_DELETE_SIGNATURE),
     flags  = INTERACTIVE,
-    key    = SECUREBOOT_DELETE_SIGNATURE_FROM_DBX;
+    key    = KEY_VALUE_DELETE_GOTO_DBX_FORM;
 
   endform;
 
@@ -339,45 +339,61 @@ formset
 
     subtitle text = STRING_TOKEN(STR_NULL);
 
-    goto SECUREBOOT_DELETE_SIGNATURE_FROM_DBT,
+    goto SECUREBOOT_SHOW_SIGNATURE_LIST_FORM,
     prompt = STRING_TOKEN (STR_SECURE_BOOT_DELETE_SIGNATURE),
     help   = STRING_TOKEN (STR_SECURE_BOOT_DELETE_SIGNATURE),
     flags  = INTERACTIVE,
-    key    = SECUREBOOT_DELETE_SIGNATURE_FROM_DBT;
+    key    = KEY_VALUE_DELETE_GOTO_DBT_FORM;
 
   endform;
 
   //
-  // Form: 'Delete Signature' for DB Options.
+  // Form: Show signature list for DB,DBX,DBT Options.
   //
-  form formid = SECUREBOOT_DELETE_SIGNATURE_FROM_DB,
-    title  = STRING_TOKEN(STR_SECURE_BOOT_DELETE_SIGNATURE);
+  form formid = SECUREBOOT_SHOW_SIGNATURE_LIST_FORM,
+    title = STRING_TOKEN(STR_SECURE_BOOT_DEL_SIGNATURE_LIST);
 
-    label LABEL_DB_DELETE;
+    subtitle text = STRING_TOKEN(STR_NULL);
+
+    grayoutif ideqval SECUREBOOT_CONFIGURATION.HasSignatureList == 0;
+      goto FORMID_SECURE_BOOT_OPTION_FORM,
+        prompt  = STRING_TOKEN(STR_SECURE_BOOT_DELETE_ALL_LIST),
+        help    = STRING_TOKEN(STR_SECURE_BOOT_DELETE_ALL_LIST),
+        flags   = INTERACTIVE,
+        key     = KEY_VALUE_DELETE_ALL_SIGNATURE_LIST;
+    endif;
+
+    subtitle text = STRING_TOKEN(STR_NULL);
+    label LABEL_SIGNATURE_LIST_START;
     label LABEL_END;
     subtitle text = STRING_TOKEN(STR_NULL);
 
   endform;
 
   //
-  // Form: 'Delete Signature' for DBX Options.
+  // Form: Show signature data for DB,DBX,DBT Options.
   //
-  form formid = SECUREBOOT_DELETE_SIGNATURE_FROM_DBX,
-    title  = STRING_TOKEN(STR_SECURE_BOOT_DELETE_SIGNATURE);
+  form formid = SECUREBOOT_SHOW_SIGNATURE_DATA_FORM,
+    title = STRING_TOKEN(STR_SECURE_BOOT_DEL_SIGNATURE_DATA);
 
-    label LABEL_DBX_DELETE;
-    label LABEL_END;
     subtitle text = STRING_TOKEN(STR_NULL);
 
-  endform;
+    goto FORMID_SECURE_BOOT_OPTION_FORM,
+      prompt  = STRING_TOKEN(STR_SECURE_BOOT_DELETE_ALL_DATA),
+      help    = STRING_TOKEN(STR_SECURE_BOOT_DELETE_ALL_DATA),
+      flags   = INTERACTIVE,
+      key     = KEY_VALUE_DELETE_ALL_SIGNATURE_DATA;
 
-  //
-  // Form: 'Delete Signature' for DBT Options.
-  //
-  form formid = SECUREBOOT_DELETE_SIGNATURE_FROM_DBT,
-    title  = STRING_TOKEN(STR_SECURE_BOOT_DELETE_SIGNATURE);
+    grayoutif ideqval SECUREBOOT_CONFIGURATION.CheckedDataCount == 0;
+      goto FORMID_SECURE_BOOT_OPTION_FORM,
+        prompt  = STRING_TOKEN(STR_SECURE_BOOT_DELETE_CHECK_DATA),
+        help    = STRING_TOKEN(STR_SECURE_BOOT_DELETE_CHECK_DATA),
+        flags   = INTERACTIVE,
+        key     = KEY_VALUE_DELETE_CHECK_SIGNATURE_DATA;
+    endif;
 
-    label LABEL_DBT_DELETE;
+    subtitle text = STRING_TOKEN(STR_NULL);
+    label LABEL_SIGNATURE_DATA_START;
     label LABEL_END;
     subtitle text = STRING_TOKEN(STR_NULL);
 

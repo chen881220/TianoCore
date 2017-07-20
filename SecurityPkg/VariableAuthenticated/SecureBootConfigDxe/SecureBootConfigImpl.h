@@ -68,6 +68,9 @@ extern  EFI_IFR_GUID_LABEL         *mEndLabel;
 #define MAX_CHAR              480
 #define TWO_BYTE_ENCODE       0x82
 
+#define SIGNATURE_DELETE_ALL_LIST         0
+#define SIGNATURE_DELETE_ALL_DATA         1
+#define SIGNATURE_DELETE_CHECK_DATA       3
 
 //
 // SHA-256 digest size in bytes
@@ -99,6 +102,13 @@ extern  EFI_IFR_GUID_LABEL         *mEndLabel;
 #define HASHALG_RAW                            0x00000004
 #define HASHALG_MAX                            0x00000004
 
+#define SECURE_BOOT_FREE_NON_NULL(Pointer)  \
+  do {                                      \
+    if ((Pointer) != NULL) {                \
+      FreePool((Pointer));                  \
+      (Pointer) = NULL;                     \
+    }                                       \
+  } while(FALSE)
 
 typedef struct {
   UINTN             Signature;
@@ -126,6 +136,12 @@ typedef enum{
   ImageType_X64
 } IMAGE_TYPE;
 
+typedef enum {
+  DELETE_ALL_SIGNATURE_LIST,
+  DELETE_ONE_SIGNATURE_LIST,
+  DELETE_SIGNATURE_DATA
+} SIGNATURE_DELETE_TYPE;
+
 ///
 /// HII specific Vendor Device Path definition.
 ///
@@ -144,6 +160,13 @@ typedef struct {
   SECUREBOOT_FILE_CONTEXT           *FileContext;
 
   EFI_GUID                          *SignatureGUID;
+
+  CHAR16                            VariableName[16];
+  EFI_GUID                          VendorGuid;
+
+  BOOLEAN                           HasSignautreList;
+  BOOLEAN                           *CheckArray;
+  UINTN                             ListIndex;
 } SECUREBOOT_CONFIG_PRIVATE_DATA;
 
 extern SECUREBOOT_CONFIG_PRIVATE_DATA      mSecureBootConfigPrivateDateTemplate;

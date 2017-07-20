@@ -33,12 +33,11 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define FORMID_ENROLL_KEK_FORM                0x09
 #define FORMID_DELETE_KEK_FORM                0x0a
 #define SECUREBOOT_ENROLL_SIGNATURE_TO_DB     0x0b
-#define SECUREBOOT_DELETE_SIGNATURE_FROM_DB   0x0c
-#define SECUREBOOT_ENROLL_SIGNATURE_TO_DBX    0x0d
-#define SECUREBOOT_DELETE_SIGNATURE_FROM_DBX  0x0e
-#define FORMID_SECURE_BOOT_DBT_OPTION_FORM    0x14
-#define SECUREBOOT_ENROLL_SIGNATURE_TO_DBT    0x15
-#define SECUREBOOT_DELETE_SIGNATURE_FROM_DBT  0x16
+#define SECUREBOOT_ENROLL_SIGNATURE_TO_DBX    0x0c
+#define FORMID_SECURE_BOOT_DBT_OPTION_FORM    0x0d
+#define SECUREBOOT_ENROLL_SIGNATURE_TO_DBT    0x0e
+#define SECUREBOOT_SHOW_SIGNATURE_LIST_FORM	  0x0f
+#define SECUREBOOT_SHOW_SIGNATURE_DATA_FORM   0x10
 
 #define SECURE_BOOT_MODE_CUSTOM               0x01
 #define SECURE_BOOT_MODE_STANDARD             0x00
@@ -56,6 +55,12 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define KEY_HIDE_SECURE_BOOT                  0x100c
 #define KEY_VALUE_SAVE_AND_EXIT_DBT           0x100d
 #define KEY_VALUE_NO_SAVE_AND_EXIT_DBT        0x100e
+#define KEY_VALUE_DELETE_ALL_SIGNATURE_LIST   0x100f
+#define KEY_VALUE_DELETE_GOTO_DB_FORM		      0x1010
+#define KEY_VALUE_DELETE_GOTO_DBX_FORM		    0x1011
+#define KEY_VALUE_DELETE_GOTO_DBT_FORM        0x1012
+#define KEY_VALUE_DELETE_ALL_SIGNATURE_DATA   0x1013
+#define KEY_VALUE_DELETE_CHECK_SIGNATURE_DATA 0x1014
 
 #define KEY_SECURE_BOOT_OPTION                0x1100
 #define KEY_SECURE_BOOT_PK_OPTION             0x1101
@@ -73,9 +78,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define KEY_SECURE_BOOT_SIGNATURE_GUID_DBT    0x110e
 
 #define LABEL_KEK_DELETE                      0x1200
-#define LABEL_DB_DELETE                       0x1201
-#define LABEL_DBX_DELETE                      0x1202
-#define LABEL_DBT_DELETE                      0x1203
+#define LABEL_SIGNATURE_LIST_START			      0x1201
+#define LABEL_SIGNATURE_DATA_START            0x1202
 #define LABEL_END                             0xffff
 
 
@@ -91,18 +95,13 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 //
 #define OPTION_DEL_KEK_QUESTION_ID            0x2000
 //
-// Question ID 0x3000 ~ 0x3FFF is for DB
+// Question ID 0x3000 ~ 0x3FFF is for signature list of DB,DBX,DBT
 //
-#define OPTION_DEL_DB_QUESTION_ID             0x3000
+#define OPTION_SIGNATURE_LIST_QUESTION_ID	    0x3000
 //
-// Question ID 0x4000 ~ 0x4FFF is for DBX
+// Question ID 0x4000 ~ 0x4FFF is for signature data of DB,DBX,DBT
 //
-#define OPTION_DEL_DBX_QUESTION_ID            0x4000
-
-//
-// Question ID 0x5000 ~ 0x5FFF is for DBT
-//
-#define OPTION_DEL_DBT_QUESTION_ID            0x5000
+#define OPTION_SIGNATURE_DATA_QUESTION_ID     0x4000
 
 #define SECURE_BOOT_GUID_SIZE                 36
 #define SECURE_BOOT_GUID_STORAGE_SIZE         37
@@ -128,6 +127,8 @@ typedef struct {
   EFI_HII_DATE RevocationDate; // The revocation date of the certificate
   EFI_HII_TIME RevocationTime; // The revocation time of the certificate
   UINT8   FileEnrollType;      // File type of sigunature enroll
+  BOOLEAN HasSignatureList;    // The variable has at least one signature list.
+  UINT8   CheckedDataCount;    // Record how many data item has been checked.
 } SECUREBOOT_CONFIGURATION;
 
 #endif
